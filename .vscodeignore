@@ -1,0 +1,8 @@
+.git
+.gitignore
+.github
+src/**
+out/**
+node_modules
+*.map
+.pre-commit-config.yaml
