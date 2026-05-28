@@ -20,6 +20,10 @@
       {
         "command": "orb-ai.scanRepository",
         "title": "ORB AI: Scan Repository"
+      },
+      {
+        "command": "orb-ai.analyzeDependencies",
+        "title": "ORB AI: Analyze Dependencies"
       }
     ]
   },

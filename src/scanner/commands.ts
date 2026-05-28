@@ -5,7 +5,7 @@ import { detectFramework, extractDependencies, analyzeImports } from './analyzer
 /**
  * Scan the current workspace and display repository analysis
  */
-export async function scanRepository() {
+export async function scanRepository(outputChannel: vscode.OutputChannel) {
   const workspaceFolders = vscode.workspace.workspaceFolders;
 
   if (!workspaceFolders) {
@@ -40,7 +40,6 @@ export async function scanRepository() {
         const report = createAnalysisReport(structure, frameworks, dependencies);
 
         // Display report in output channel
-        const outputChannel = vscode.window.createOutputChannel('ORB AI Analysis');
         outputChannel.clear();
         outputChannel.append(report);
         outputChannel.show();
