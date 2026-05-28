@@ -9,43 +9,91 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onView:orb-ai.repositoryView",
+    "onCommand:orb-ai.scanRepository",
+    "onCommand:orb-ai.showRepositoryGraph",
+    "onCommand:orb-ai.analyzeCurrentFile",
+    "onCommand:orb-ai.openPanel",
+    "onCommand:orb-ai.openChat",
+    "onStartupFinished",
+    "*"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "orb-ai",
+          "title": "ORB AI",
+          "icon": "resources/orb.svg"
+        }
+      ]
+    },
+    "views": {
+      "orb-ai": [
+        {
+          "type": "webview",
+          "id": "orb-ai.repositoryView",
+          "name": "ORB AI"
+        }
+      ]
+    },
     "commands": [
-      {
-        "command": "orb-ai.helloWorld",
-        "title": "ORB AI: Hello World"
-      },
       {
         "command": "orb-ai.scanRepository",
         "title": "ORB AI: Scan Repository"
+      },
+      {
+        "command": "orb-ai.showRepositoryGraph",
+        "title": "ORB AI: Show Repository Graph"
+      },
+      {
+        "command": "orb-ai.analyzeCurrentFile",
+        "title": "ORB AI: Analyze Current File"
+      },
+      {
+        "command": "orb-ai.openPanel",
+        "title": "ORB AI: Open ORB AI Panel"
+      },
+      {
+        "command": "orb-ai.openChat",
+        "title": "ORB AI: Open Chat"
       }
-    ]
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "orb-ai.scanRepository",
+          "when": "view == orb-ai.repositoryView",
+          "group": "navigation"
+        },
+        {
+          "command": "orb-ai.showRepositoryGraph",
+          "when": "view == orb-ai.repositoryView",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
-    "vscode:prepublish": "npm run esbuild-base -- --minify",
-    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --platform=node --target=node20",
-    "esbuild": "npm run esbuild-base -- --sourcemap",
-    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack --mode development",
+    "watch": "webpack --mode development --watch",
+    "package": "webpack --mode production",
     "test-compile": "tsc -p ./",
-    "pretest": "npm run test-compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "npm run test-compile && npm run lint"
   },
   "devDependencies": {
-    "@types/glob": "^8.1.0",
-    "@types/mocha": "^10.0.7",
     "@types/node": "20.x",
     "@types/vscode": "^1.95.0",
     "@typescript-eslint/eslint-plugin": "^7.12.0",
     "@typescript-eslint/parser": "^7.12.0",
-    "@vscode/test-cli": "^0.0.9",
-    "@vscode/test-electron": "^2.4.0",
-    "esbuild": "^0.21.5",
     "eslint": "^8.57.0",
-    "glob": "^10.4.1",
-    "mocha": "^10.7.3",
-    "typescript": "^5.4.5"
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.4.5",
+    "webpack": "^5.91.0",
+    "webpack-cli": "^5.1.4"
   }
 }
