@@ -1,0 +1,35 @@
+```
+# Dependencies
+node_modules/
+
+# Build artifacts
+dist/
+
+# Logs
+*.log
+
+# Environment variables
+.env
+.env.local
+*.env.*
+
+# IDE files
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.swp
+
+# Coverage reports
+coverage/
+htmlcov/
+*.coverage
+
+# TypeScript build output
+*.js.map
+
+# Package lock file
+package-lock.json
+
+```
