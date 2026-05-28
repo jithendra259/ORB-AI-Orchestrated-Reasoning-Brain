@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import type { RepositoryIntelligenceService, RepositoryIntelligenceSnapshot } from '../scanner';
 import type { OrbLogger } from '../utils/logger';
 import { OrbAiChatHandler } from './chatHandler';
@@ -36,6 +37,23 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
           break;
         case 'showGraph':
           await vscode.commands.executeCommand('orb-ai.showRepositoryGraph');
+          break;
+        case 'loadScan':
+          try {
+            const workspaceRoot = this.intelligenceService.getWorkspaceRoot();
+            if (!workspaceRoot) {
+              webviewView.webview.postMessage({ command: 'scanLoadError', text: 'No workspace root found' });
+              break;
+            }
+
+            const scanPath = path.join(workspaceRoot, 'out', 'repository-scan.json');
+            const uri = vscode.Uri.file(scanPath);
+            const bytes = await vscode.workspace.fs.readFile(uri);
+            const json = JSON.parse(Buffer.from(bytes).toString('utf8'));
+            webviewView.webview.postMessage({ command: 'scanLoaded', data: json });
+          } catch (err) {
+            webviewView.webview.postMessage({ command: 'scanLoadError', text: String(err) });
+          }
           break;
         case 'sendMessage':
           if (message.text) {
@@ -123,6 +141,7 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     <div class="actions">
       <button id="scanRepository">Scan Repository</button>
       <button id="showGraph" class="secondary">Show Graph</button>
+      <button id="loadScan" class="secondary">Load Scan</button>
     </div>
 
     <!-- Chat UI -->
@@ -146,6 +165,8 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
 
     scanBtn?.addEventListener('click', () => vscode.postMessage({ command: 'scanRepository' }));
     graphBtn?.addEventListener('click', () => vscode.postMessage({ command: 'showGraph' }));
+    const loadBtn = document.getElementById('loadScan');
+    loadBtn?.addEventListener('click', () => vscode.postMessage({ command: 'loadScan' }));
 
     function addMessage(text, author) {
       const msgDiv = document.createElement('div');
@@ -178,8 +199,35 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       if (message.command === 'aiResponse') {
         loadingSpinner?.classList.add('hidden');
         addMessage(message.text, 'ai');
+      } else if (message.command === 'scanLoaded') {
+        loadingSpinner?.classList.add('hidden');
+        renderScanSummary(message.data);
+      } else if (message.command === 'scanLoadError') {
+        loadingSpinner?.classList.add('hidden');
+        addMessage('Failed to load scan: ' + (message.text || 'unknown error'), 'ai');
       }
     });
+
+    function renderScanSummary(data) {
+      const container = document.createElement('div');
+      container.className = 'item';
+      const title = document.createElement('div');
+      title.className = 'item-title';
+      title.textContent = 'Scan: ' + data.scannedAt + ' — ' + data.files.length + ' files, ' + data.relationships.length + ' relationships';
+      container.appendChild(title);
+
+      const list = document.createElement('div');
+      list.className = 'list';
+      for (const f of data.files.slice(0, 50)) {
+        const item = document.createElement('div');
+        item.className = 'item-meta';
+        item.textContent = f.relativePath;
+        list.appendChild(item);
+      }
+
+      container.appendChild(list);
+      document.body.insertBefore(container, document.getElementById('chatContainer'));
+    }
     </script>
 </body>
 </html>`;

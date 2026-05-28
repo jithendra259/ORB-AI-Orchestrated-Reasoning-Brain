@@ -58,6 +58,19 @@ export class RepositoryIntelligenceService {
     this.graphStore.setGraph(graph);
     this.onDidChangeSnapshotEmitter.fire(snapshot);
 
+    // Persist a JSON copy of the snapshot to out/repository-scan.json for inspection
+    try {
+      const outPath = path.join(this.getWorkspaceRoot() ?? '.', 'out');
+      const outFile = path.join(outPath, 'repository-scan.json');
+      const uri = vscode.Uri.file(outFile);
+      const data = Buffer.from(JSON.stringify(snapshot, null, 2), 'utf8');
+      await vscode.workspace.fs.createDirectory(vscode.Uri.file(outPath));
+      await vscode.workspace.fs.writeFile(uri, data);
+      this.logger.info(`Wrote repository scan snapshot to ${outFile}`);
+    } catch (err) {
+      this.logger.warn('Failed to persist repository scan snapshot', err);
+    }
+
     this.logger.info('Repository intelligence scan complete', {
       files: summary.totalFiles,
       folders: summary.totalFolders,
