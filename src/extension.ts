@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { registerOrbAiCommands, RepositoryIntelligenceService } from './scanner';
-import { OrbAiViewProvider } from './ui';
+import { OrbAiViewProvider, SidebarProvider } from './ui';
 import { OutputChannelOrbLogger } from './utils/logger';
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -8,11 +8,21 @@ export function activate(context: vscode.ExtensionContext): void {
   const logger = new OutputChannelOrbLogger(outputChannel);
   const intelligenceService = new RepositoryIntelligenceService(logger);
   const viewProvider = new OrbAiViewProvider(context.extensionUri, intelligenceService, logger);
+  const sidebarProvider = new SidebarProvider(context);
 
   context.subscriptions.push(
     outputChannel,
     intelligenceService,
     vscode.window.registerWebviewViewProvider(OrbAiViewProvider.viewType, viewProvider),
+    vscode.window.registerWebviewViewProvider(
+      SidebarProvider.viewType,
+      sidebarProvider,
+      {
+        webviewOptions: {
+          retainContextWhenHidden: true,
+        },
+      },
+    ),
   );
 
   registerOrbAiCommands(context, intelligenceService, viewProvider, logger);
