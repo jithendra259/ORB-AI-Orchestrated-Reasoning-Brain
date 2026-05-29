@@ -331,10 +331,112 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     .message { padding:6px 10px; border-radius:4px; margin:4px 0; }
     .message.user { background:var(--vscode-input-background); }
     .message.ai { background:var(--vscode-editorWidget-background); }
-    #inputArea { display:flex; gap:6px; align-items:center; }
-    #messageInput { flex:1; padding:6px; border:1px solid var(--vscode-input-border); border-radius:4px; background:var(--vscode-input-background); color:var(--vscode-input-foreground); }
-    #sendMessage { padding:6px 12px; }
-    #loadingSpinner { margin-left:auto; }
+    #loadingSpinner { margin-left:auto; margin-right:4px; }
+    
+    /* Premium Unified Chat Input Area */
+    .chat-input-container {
+      border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+      border-radius: 8px;
+      background: var(--vscode-input-background);
+      margin-bottom: 12px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .chat-input-container:focus-within {
+      border-color: var(--vscode-focusBorder);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+    }
+    .chat-input-container textarea {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: var(--vscode-input-foreground);
+      font-family: var(--vscode-font-family);
+      font-size: var(--vscode-font-size);
+      line-height: 1.4;
+      outline: none;
+      padding: 0;
+      margin: 0;
+      resize: none;
+      min-height: 24px;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+    .chat-input-container textarea::placeholder {
+      color: var(--vscode-input-placeholderForeground);
+    }
+    .chat-input-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 4px;
+    }
+    .toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--vscode-descriptionForeground);
+      font-size: 11px;
+    }
+    .toolbar-btn {
+      background: transparent;
+      border: none;
+      color: var(--vscode-descriptionForeground);
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-family: inherit;
+      transition: color 0.15s, background 0.15s;
+    }
+    .toolbar-btn:hover {
+      color: var(--vscode-foreground);
+      background: var(--vscode-toolbar-hoverBackground, rgba(90, 93, 94, 0.2));
+    }
+    .toolbar-separator {
+      color: var(--vscode-panel-border, rgba(128, 128, 128, 0.3));
+      font-weight: 300;
+      user-select: none;
+    }
+    .toolbar-badge {
+      padding: 2px 6px;
+      background: var(--vscode-sideBarSectionHeader-background, var(--vscode-panel-background));
+      border-radius: 4px;
+      font-weight: 500;
+      color: var(--vscode-descriptionForeground);
+      cursor: default;
+    }
+    .send-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--vscode-button-background);
+      color: var(--vscode-button-foreground);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      padding: 0;
+    }
+    .send-btn:hover {
+      background: var(--vscode-button-hoverBackground);
+      transform: scale(1.05);
+    }
+    .send-btn:active {
+      transform: scale(0.95);
+    }
+    .send-btn svg {
+      stroke: currentColor;
+    }
     .hidden { display:none; }
 
     /* Collapsible Settings Panel */
@@ -571,10 +673,29 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
 
     <!-- Chat UI -->
     <div id="chatContainer"></div>
-    <div id="inputArea">
-      <input type="text" id="messageInput" placeholder="Ask ORB AI..." />
-      <button id="sendMessage">Send</button>
-      <span id="loadingSpinner" class="hidden">⏳</span>
+    <div class="chat-input-container">
+      <textarea id="messageInput" placeholder="Ask ORB AI..." rows="1"></textarea>
+      <div class="chat-input-toolbar">
+        <div class="toolbar-left">
+          <button class="toolbar-btn" id="toolbarPlusBtn" title="Add Context">+</button>
+          <span class="toolbar-separator">|</span>
+          <button class="toolbar-btn" id="toolbarCodeBtn" title="Insert Code Block">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+          </button>
+          <span class="toolbar-separator">|</span>
+          <div class="toolbar-badge" id="toolbarModelBadge">AUTO</div>
+          <span class="toolbar-separator">|</span>
+          <button class="toolbar-btn" id="toolbarSettingsBtn" title="Toggle Inline Settings">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+          </button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span id="loadingSpinner" class="hidden">⏳</span>
+          <button class="send-btn" id="sendMessage" title="Send Message">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+          </button>
+        </div>
+      </div>
     </div>
 
     ${summary ? renderSummary(this.snapshot as RepositoryIntelligenceSnapshot) : renderWelcome()}
@@ -650,7 +771,13 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     
     function fillForm(cfg) {
       if (!cfg) return;
-      if (cfg.provider) providerSelect.value = cfg.provider;
+      if (cfg.provider) {
+        providerSelect.value = cfg.provider;
+        const badge = document.getElementById('toolbarModelBadge');
+        if (badge) {
+          badge.textContent = cfg.provider.toUpperCase();
+        }
+      }
       if (cfg.nvidiaApiKey !== undefined) nvidiaApiKey.value = cfg.nvidiaApiKey;
       if (cfg.nvidiaModel !== undefined) nvidiaModel.value = cfg.nvidiaModel;
       if (cfg.nvidiaBaseUrl !== undefined) nvidiaBaseUrl.value = cfg.nvidiaBaseUrl;
@@ -739,16 +866,51 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       if (!text) { return; }
       addMessage(text, 'user');
       inputBox.value = '';
+      if (inputBox) {
+        inputBox.style.height = 'auto';
+      }
       loadingSpinner?.classList.remove('hidden');
       vscode.postMessage({ command: 'sendMessage', text });
     });
 
-    // Support Enter key to send
+    // Support Enter to send and Shift+Enter for newlines
     inputBox?.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
+      if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendBtn?.click();
       }
+    });
+
+    // Auto-resize textarea
+    inputBox?.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = this.scrollHeight + 'px';
+    });
+
+    // Toolbar Code Btn listener
+    const toolbarCodeBtn = document.getElementById('toolbarCodeBtn');
+    toolbarCodeBtn?.addEventListener('click', () => {
+      if (!inputBox) return;
+      const start = inputBox.selectionStart;
+      const end = inputBox.selectionEnd;
+      const val = inputBox.value;
+      inputBox.value = val.substring(0, start) + "\`\`\`\n\n\`\`\`" + val.substring(end);
+      inputBox.focus();
+      inputBox.selectionStart = inputBox.selectionEnd = start + 4;
+      inputBox.style.height = 'auto';
+      inputBox.style.height = inputBox.scrollHeight + 'px';
+    });
+
+    // Toolbar Settings Btn listener (toggles configurations drawer)
+    const toolbarSettingsBtn = document.getElementById('toolbarSettingsBtn');
+    toolbarSettingsBtn?.addEventListener('click', () => {
+      setConfigPanelOpen(!isConfigOpen);
+    });
+
+    // Plus button toast warning
+    const toolbarPlusBtn = document.getElementById('toolbarPlusBtn');
+    toolbarPlusBtn?.addEventListener('click', () => {
+      vscode.postMessage({ command: 'sendMessage', text: 'How can I add files to the chat context?' });
     });
 
     // Request initial provider status check
