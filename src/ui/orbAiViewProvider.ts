@@ -1362,15 +1362,15 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     <span id="contextChipLabel">🕸️ Auto</span>
     <span class="model-chip-caret">▾</span>
   </div>
-</div>
 
-<!-- Model popover -->
-<div class="model-popover hidden" id="modelPopover">
-  <div class="popover-search">
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:#64748b;flex-shrink:0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input type="text" id="popoverSearch" placeholder="Search models..." autocomplete="off">
+  <!-- Model popover inside model-bar container -->
+  <div class="model-popover hidden" id="modelPopover">
+    <div class="popover-search">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:#64748b;flex-shrink:0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="popoverSearch" placeholder="Search models..." autocomplete="off">
+    </div>
+    <div class="popover-list" id="popoverList"></div>
   </div>
-  <div class="popover-list" id="popoverList"></div>
 </div>
 
 <!-- Input area -->
