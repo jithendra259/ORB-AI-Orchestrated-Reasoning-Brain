@@ -74,6 +74,59 @@
           "group": "navigation"
         }
       ]
+    },
+    "configuration": {
+      "title": "ORB AI",
+      "properties": {
+        "orb-ai.provider": {
+          "type": "string",
+          "enum": ["ollama", "cloud", "nvidia"],
+          "default": "nvidia",
+          "description": "Which LLM backend to use (nvidia recommended)"
+        },
+        "orb-ai.ollamaUrl": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "Ollama server URL"
+        },
+        "orb-ai.ollamaModel": {
+          "type": "string",
+          "default": "qwen2.5-coder:7b",
+          "description": "Ollama model name"
+        },
+        "orb-ai.cloudBaseUrl": {
+          "type": "string",
+          "default": "https://api.openai.com/v1",
+          "description": "OpenAI-compatible API base URL"
+        },
+        "orb-ai.cloudModel": {
+          "type": "string",
+          "default": "gpt-4o-mini",
+          "description": "Cloud model name"
+        },
+        "orb-ai.apiKey": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "API Key for cloud provider. ⚠️ Stored in VS Code settings.json — consider using SecretStorage for production.",
+          "scope": "machine-overridable"
+        },
+        "orb-ai.nvidiaApiKey": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "NVIDIA API Key for Qwen model. Get it from https://integrate.api.nvidia.com. ⚠️ Stored in VS Code settings.json — consider using SecretStorage for production.",
+          "scope": "machine-overridable"
+        },
+        "orb-ai.nvidiaBaseUrl": {
+          "type": "string",
+          "default": "https://integrate.api.nvidia.com/v1",
+          "description": "NVIDIA API base URL"
+        },
+        "orb-ai.nvidiaModel": {
+          "type": "string",
+          "default": "qwen/qwen3.5-397b-a17b",
+          "description": "NVIDIA Qwen model name"
+        }
+      }
     }
   },
   "scripts": {

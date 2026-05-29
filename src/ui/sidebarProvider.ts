@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { getNonce } from '../utils/getNonce';
+import { getLLMProvider } from '../ai';
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'orb-ai-sidebar';
@@ -41,58 +42,76 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
           if (!data.value) {
             return;
           }
-          // Add user message to history
-          this.messageHistory.push({
-            role: 'user',
-            content: data.value,
-          });
-
-          // Send thinking state
-          this.view?.webview.postMessage({
-            type: 'thinking',
-          });
-
-          // Simulate AI thinking and generate mock response
-          setTimeout(() => {
-            const mockResponse = await this.generateMockResponse(data.value);
-            // Add AI response to history
-            this.messageHistory.push({
-              role: 'assistant',
-              content: mockResponse,
-            });
-
-            // Send response back to webview
-            this.view?.webview.postMessage({
-              type: 'onMessage',
-              value: mockResponse,
-            });
-          }, 1000);
+          await this.handleUserMessage(data.value);
           break;
       }
     });
   }
 
-  private async generateMockResponse(userMessage: string): Promise<string> {
-    // Mock AI responses based on user input
-    const lower = userMessage.toLowerCase();
+  private async handleUserMessage(userMessage: string): Promise<void> {
+    try {
+      // Add user message to history
+      this.messageHistory.push({
+        role: 'user',
+        content: userMessage,
+      });
 
-    if (lower.includes('hello') || lower.includes('hi')) {
-      return 'Hello! I am ORB AI, your intelligent codebase assistant. How can I help you today?';
+      // Send user message to webview
+      this.view?.webview.postMessage({
+        type: 'onUserMessage',
+        value: userMessage,
+      });
+
+      // Get LLM provider
+      const provider = getLLMProvider();
+      const available = await provider.isAvailable();
+
+      if (!available) {
+        this.view?.webview.postMessage({
+          type: 'onError',
+          value: '❌ LLM provider unavailable. Check ORB AI settings.',
+        });
+        return;
+      }
+
+      // Send stream start signal
+      this.view?.webview.postMessage({
+        type: 'onStreamStart',
+      });
+
+      // Build messages array for LLM
+      const messages = this.messageHistory.map((msg) => ({
+        role: msg.role as 'user' | 'assistant' | 'system',
+        content: msg.content,
+      }));
+
+      let fullResponse = '';
+
+      // Stream the response
+      for await (const token of provider.chat(messages)) {
+        fullResponse += token;
+        this.view?.webview.postMessage({
+          type: 'onStreamToken',
+          value: token,
+        });
+      }
+
+      // Send stream end signal
+      this.view?.webview.postMessage({
+        type: 'onStreamEnd',
+      });
+
+      // Add assistant response to history
+      this.messageHistory.push({
+        role: 'assistant',
+        content: fullResponse,
+      });
+    } catch (err: any) {
+      this.view?.webview.postMessage({
+        type: 'onError',
+        value: `❌ Error: ${err.message}`,
+      });
     }
-
-    if (lower.includes('what') && lower.includes('framework')) {
-      return 'I can detect frameworks in your codebase. Run "Scan Repository" to analyze your project and I will identify what frameworks you are using!';
-    }
-
-    if (lower.includes('help')) {
-      return 'I can help you with:\n• Analyzing your codebase\n• Detecting frameworks\n• Understanding dependencies\n• Generating code insights\n\nTry asking me about your project!';
-    }
-
-    if (lower.includes('scan')) {
-      return 'To scan your repository, click the "Scan Repository" button at the top of the sidebar. This will analyze all files and detect your tech stack.';
-    }
-
-    return `You said: "${userMessage}". I'm learning to respond intelligently. Try asking about frameworks, dependencies, or scanning your repository!`;
   }
 
   private getHtmlForWebview(webview: vscode.Webview): string {
@@ -375,13 +394,62 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       const message = event.data;
 
       switch (message.type) {
+        case 'onUserMessage':
+          removeThinking();
+          renderMessage('user', message.value);
+          break;
+
+        case 'onStreamStart':
+          removeThinking();
+          // Create a new assistant message div that we'll append tokens to
+          const messageDiv = document.createElement('div');
+          messageDiv.className = 'message assistant';
+          messageDiv.id = 'streamingMessage';
+
+          const contentDiv = document.createElement('div');
+          contentDiv.className = 'message-content';
+          contentDiv.id = 'streamingContent';
+          contentDiv.textContent = '';
+
+          messageDiv.appendChild(contentDiv);
+          chatContainer.appendChild(messageDiv);
+          break;
+
+        case 'onStreamToken':
+          // Append token to the streaming message
+          const streamingContent = document.getElementById('streamingContent');
+          if (streamingContent) {
+            streamingContent.textContent += message.value;
+            // Auto-scroll to bottom
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+          }
+          break;
+
+        case 'onStreamEnd':
+          // Clean up streaming message ID after stream ends
+          const streamingMsg = document.getElementById('streamingMessage');
+          if (streamingMsg) {
+            streamingMsg.removeAttribute('id');
+          }
+          const streamingCont = document.getElementById('streamingContent');
+          if (streamingCont) {
+            streamingCont.removeAttribute('id');
+          }
+          break;
+
         case 'onMessage':
           removeThinking();
           renderMessage('assistant', message.value);
           state.messages.push({ role: 'assistant', content: message.value });
           break;
+
         case 'thinking':
           renderThinking();
+          break;
+
+        case 'onError':
+          removeThinking();
+          renderMessage('assistant', message.value);
           break;
       }
 
