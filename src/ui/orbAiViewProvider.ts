@@ -75,6 +75,11 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
         case 'openSettings':
           await vscode.commands.executeCommand('workbench.action.openSettings', '@ext:orb-ai');
           break;
+        case 'showUpgradeMessage':
+          if (message.text) {
+            vscode.window.showInformationMessage(message.text);
+          }
+          break;
         case 'updateConfig':
           if (message.data) {
             try {
@@ -335,6 +340,7 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     
     /* Premium Unified Chat Input Area */
     .chat-input-container {
+      position: relative;
       border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
       border-radius: 8px;
       background: var(--vscode-input-background);
@@ -345,6 +351,157 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       gap: 6px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
       transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    
+    /* Model Popover Styles */
+    .model-popover {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      background: var(--vscode-menu-background, var(--vscode-editorWidget-background, #1e1e1e));
+      border: 1px solid var(--vscode-menu-border, var(--vscode-widget-border, #303030));
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      max-height: 320px;
+    }
+    .model-popover.hidden {
+      display: none;
+    }
+    .popover-search-container {
+      display: flex;
+      align-items: center;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--vscode-menu-border, var(--vscode-widget-border, #303030));
+      gap: 8px;
+    }
+    .popover-search-container input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--vscode-menu-foreground, var(--vscode-foreground, #cccccc));
+      font-family: inherit;
+      font-size: var(--vscode-font-size, 13px);
+      outline: none;
+      padding: 0;
+    }
+    .popover-search-container input::placeholder {
+      color: var(--vscode-input-placeholderForeground, #888888);
+    }
+    .popover-settings-btn {
+      background: transparent;
+      border: none;
+      color: var(--vscode-descriptionForeground, #888888);
+      cursor: pointer;
+      padding: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: color 0.15s, background-color 0.15s;
+    }
+    .popover-settings-btn:hover {
+      color: var(--vscode-menu-foreground, var(--vscode-foreground, #ffffff));
+      background-color: var(--vscode-toolbar-hoverBackground, rgba(90, 93, 94, 0.2));
+    }
+    .popover-content {
+      overflow-y: auto;
+      padding: 4px 0;
+    }
+    .popover-item {
+      display: flex;
+      align-items: center;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: var(--vscode-font-size, 13px);
+      user-select: none;
+      color: var(--vscode-menu-foreground, var(--vscode-foreground, #cccccc));
+      transition: background-color 0.1s;
+    }
+    .popover-item:hover {
+      background-color: var(--vscode-menu-list-hoverBackground, var(--vscode-list-hoverBackground, #2a2d2e));
+      color: var(--vscode-menu-foreground, var(--vscode-foreground, #ffffff));
+    }
+    .popover-item.selected {
+      font-weight: 500;
+    }
+    .popover-item-check {
+      width: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 6px;
+      color: var(--vscode-foreground, #cccccc);
+      font-size: 11px;
+    }
+    .popover-item-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .popover-item-provider {
+      font-size: 11px;
+      color: var(--vscode-descriptionForeground, #888888);
+      margin-left: 8px;
+    }
+    .popover-item-badge {
+      font-size: 10px;
+      background: var(--vscode-sideBarSectionHeader-background, rgba(128, 128, 128, 0.2));
+      color: var(--vscode-descriptionForeground, #888888);
+      padding: 1px 4px;
+      border-radius: 3px;
+      margin-left: 6px;
+    }
+    .popover-item-upgrade {
+      font-size: 11px;
+      color: var(--vscode-textLink-foreground, #3b82f6);
+      font-weight: 600;
+      margin-left: 8px;
+      cursor: pointer;
+    }
+    .popover-item-upgrade:hover {
+      text-decoration: underline;
+    }
+    .popover-section-title {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--vscode-descriptionForeground, #888888);
+      padding: 6px 12px 2px 12px;
+      user-select: none;
+    }
+    .popover-collapsible-header {
+      display: flex;
+      align-items: center;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: var(--vscode-font-size, 13px);
+      font-weight: 500;
+      color: var(--vscode-menu-foreground, var(--vscode-foreground, #cccccc));
+      user-select: none;
+      transition: background-color 0.1s;
+    }
+    .popover-collapsible-header:hover {
+      background-color: var(--vscode-menu-list-hoverBackground, var(--vscode-list-hoverBackground, #2a2d2e));
+    }
+    .popover-collapsible-chevron {
+      font-size: 10px;
+      margin-right: 6px;
+      transition: transform 0.15s;
+    }
+    .popover-collapsible-chevron.expanded {
+      transform: rotate(90deg);
+    }
+    .popover-collapsible-content {
+      display: none;
+    }
+    .popover-collapsible-content.expanded {
+      display: block;
     }
     .chat-input-container:focus-within {
       border-color: var(--vscode-focusBorder);
@@ -411,7 +568,13 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       border-radius: 4px;
       font-weight: 500;
       color: var(--vscode-descriptionForeground);
-      cursor: default;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.15s, color 0.15s;
+    }
+    .toolbar-badge:hover {
+      background: var(--vscode-toolbar-hoverBackground, rgba(90, 93, 94, 0.2));
+      color: var(--vscode-foreground);
     }
     .send-btn {
       width: 24px;
@@ -674,6 +837,16 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     <!-- Chat UI -->
     <div id="chatContainer"></div>
     <div class="chat-input-container">
+      <!-- Floating Model Selector Popover -->
+      <div class="model-popover hidden" id="modelPopover">
+        <div class="popover-search-container">
+          <input type="text" id="popoverSearch" placeholder="Search models" autocomplete="off" />
+          <button class="popover-settings-btn" id="popoverSettingsBtn" title="LLM Provider Settings">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          </button>
+        </div>
+        <div class="popover-content" id="popoverContentList"></div>
+      </div>
       <textarea id="messageInput" placeholder="Ask ORB AI..." rows="1"></textarea>
       <div class="chat-input-toolbar">
         <div class="toolbar-left">
@@ -749,6 +922,273 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       setConfigPanelOpen(!isConfigOpen);
     });
 
+    // Model selector popover catalog
+    const modelCatalog = [
+      { id: 'auto', name: 'Auto', provider: '', section: 'auto' },
+      { id: 'nvidia:qwen/qwen3.5-397b-a17b', name: 'qwen3.5-397b-a17b', provider: 'Nvidia', section: 'pinned' },
+      { id: 'cloud:gpt-4o-mini', name: 'gpt-4o-mini', provider: 'Cloud', section: 'pinned' },
+      { id: 'ollama:qwen2.5-coder:7b', name: 'qwen2.5-coder:7b', provider: 'Ollama', section: 'pinned' },
+      { id: 'ollama:qwen3-coder-next:cloud', name: 'qwen3-coder-next:cloud', provider: 'Ollama', section: 'pinned' },
+      { id: 'ollama:gpt-oss:120b-cloud', name: 'gpt-oss:120b-cloud', provider: 'Ollama', section: 'pinned' },
+      { id: 'ollama:qwen3:1.7b', name: 'qwen3:1.7b', provider: 'Ollama', section: 'pinned' },
+      // Mock items matching screenshot
+      { id: 'copilot:claude-haiku-4.5', name: 'Claude Haiku 4.5', provider: 'Copilot', badge: '1x', section: 'copilot' },
+      { id: 'upgrade:claude-sonnet-4.6', name: 'Claude Sonnet 4.6', provider: '', upgrade: true, section: 'copilot' },
+      { id: 'upgrade:gpt-5.4', name: 'GPT-5.4', provider: '', upgrade: true, section: 'copilot' },
+      // Other models (collapsible)
+      { id: 'cloud:gpt-4o', name: 'gpt-4o', provider: 'Cloud', section: 'other' },
+      { id: 'ollama:llama3', name: 'llama3', provider: 'Ollama', section: 'other' },
+      { id: 'ollama:mistral', name: 'mistral', provider: 'Ollama', section: 'other' }
+    ];
+
+    let currentSearchQuery = '';
+    let isOtherModelsExpanded = false;
+
+    // DOM Elements for Model Popover
+    const modelPopover = document.getElementById('modelPopover');
+    const popoverSearch = document.getElementById('popoverSearch');
+    const popoverContentList = document.getElementById('popoverContentList');
+    const popoverSettingsBtn = document.getElementById('popoverSettingsBtn');
+    const toolbarModelBadge = document.getElementById('toolbarModelBadge');
+
+    function getActiveModelId(cfg) {
+      if (!cfg) return 'auto';
+      const provider = cfg.provider;
+      if (provider === 'nvidia') {
+        if (cfg.nvidiaModel === 'qwen/qwen3.5-397b-a17b') {
+          return 'auto';
+        }
+        return 'nvidia:' + cfg.nvidiaModel;
+      }
+      if (provider === 'cloud') {
+        return 'cloud:' + cfg.cloudModel;
+      }
+      if (provider === 'ollama') {
+        return 'ollama:' + cfg.ollamaModel;
+      }
+      return 'auto';
+    }
+
+    function updateBadgeText(cfg) {
+      if (!cfg || !toolbarModelBadge) return;
+      const activeId = getActiveModelId(cfg);
+      if (activeId === 'auto') {
+        toolbarModelBadge.textContent = 'Auto';
+      } else if (activeId.startsWith('nvidia:')) {
+        toolbarModelBadge.textContent = activeId.substring(7).split('/').pop() || 'Nvidia';
+      } else if (activeId.startsWith('cloud:')) {
+        toolbarModelBadge.textContent = activeId.substring(6);
+      } else if (activeId.startsWith('ollama:')) {
+        toolbarModelBadge.textContent = activeId.substring(7);
+      }
+    }
+
+    function renderModelList() {
+      if (!popoverContentList) return;
+      popoverContentList.innerHTML = '';
+
+      const query = currentSearchQuery.toLowerCase().trim();
+      const activeId = getActiveModelId(window.currentConfigState);
+
+      const matchesQuery = (item) => {
+        if (!query) return true;
+        return item.name.toLowerCase().includes(query) || (item.provider && item.provider.toLowerCase().includes(query));
+      };
+
+      const autoItems = modelCatalog.filter(i => i.section === 'auto' && matchesQuery(i));
+      const pinnedItems = modelCatalog.filter(i => i.section === 'pinned' && matchesQuery(i));
+      const copilotItems = modelCatalog.filter(i => i.section === 'copilot' && matchesQuery(i));
+      const otherItems = modelCatalog.filter(i => i.section === 'other' && matchesQuery(i));
+
+      autoItems.forEach(item => {
+        popoverContentList.appendChild(createModelItemElement(item, activeId === 'auto'));
+      });
+
+      if (pinnedItems.length > 0) {
+        const title = document.createElement('div');
+        title.className = 'popover-section-title';
+        title.textContent = 'Pinned';
+        popoverContentList.appendChild(title);
+        pinnedItems.forEach(item => {
+          popoverContentList.appendChild(createModelItemElement(item, activeId === item.id));
+        });
+      }
+
+      if (copilotItems.length > 0) {
+        copilotItems.forEach(item => {
+          popoverContentList.appendChild(createModelItemElement(item, activeId === item.id));
+        });
+      }
+
+      if (otherItems.length > 0) {
+        const collapsibleHeader = document.createElement('div');
+        collapsibleHeader.className = 'popover-collapsible-header';
+        
+        const chevron = document.createElement('span');
+        chevron.className = 'popover-collapsible-chevron';
+        chevron.textContent = '▶';
+        
+        const forceExpand = !!query;
+        const expanded = forceExpand || isOtherModelsExpanded;
+        if (expanded) {
+          chevron.classList.add('expanded');
+          chevron.textContent = '▼';
+        }
+
+        collapsibleHeader.appendChild(chevron);
+        
+        const titleSpan = document.createElement('span');
+        titleSpan.textContent = 'Other Models';
+        collapsibleHeader.appendChild(titleSpan);
+
+        collapsibleHeader.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (query) return;
+          isOtherModelsExpanded = !isOtherModelsExpanded;
+          renderModelList();
+        });
+
+        popoverContentList.appendChild(collapsibleHeader);
+
+        const collapsibleContent = document.createElement('div');
+        collapsibleContent.className = 'popover-collapsible-content';
+        if (expanded) {
+          collapsibleContent.classList.add('expanded');
+        }
+
+        otherItems.forEach(item => {
+          collapsibleContent.appendChild(createModelItemElement(item, activeId === item.id));
+        });
+
+        popoverContentList.appendChild(collapsibleContent);
+      }
+
+      if (autoItems.length === 0 && pinnedItems.length === 0 && copilotItems.length === 0 && otherItems.length === 0) {
+        const emptyDiv = document.createElement('div');
+        emptyDiv.className = 'popover-item';
+        emptyDiv.style.color = 'var(--vscode-descriptionForeground)';
+        emptyDiv.style.cursor = 'default';
+        emptyDiv.textContent = 'No models found';
+        popoverContentList.appendChild(emptyDiv);
+      }
+    }
+
+    function createModelItemElement(item, isSelected) {
+      const itemDiv = document.createElement('div');
+      itemDiv.className = 'popover-item';
+      if (isSelected) {
+        itemDiv.classList.add('selected');
+      }
+
+      const checkDiv = document.createElement('div');
+      checkDiv.className = 'popover-item-check';
+      if (isSelected) {
+        checkDiv.textContent = '✓';
+      }
+      itemDiv.appendChild(checkDiv);
+
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'popover-item-name';
+      nameSpan.textContent = item.name;
+      itemDiv.appendChild(nameSpan);
+
+      if (item.provider) {
+        const providerSpan = document.createElement('span');
+        providerSpan.className = 'popover-item-provider';
+        providerSpan.textContent = item.provider;
+        itemDiv.appendChild(providerSpan);
+      }
+
+      if (item.badge) {
+        const badgeSpan = document.createElement('span');
+        badgeSpan.className = 'popover-item-badge';
+        badgeSpan.textContent = item.badge;
+        itemDiv.appendChild(badgeSpan);
+      }
+
+      if (item.upgrade) {
+        const upgradeSpan = document.createElement('span');
+        upgradeSpan.className = 'popover-item-upgrade';
+        upgradeSpan.textContent = 'Upgrade';
+        upgradeSpan.addEventListener('click', (e) => {
+          e.stopPropagation();
+          vscode.postMessage({
+            command: 'showUpgradeMessage',
+            text: 'Upgrade to premium to access ' + item.name + '!'
+          });
+          modelPopover.classList.add('hidden');
+        });
+        itemDiv.appendChild(upgradeSpan);
+      }
+
+      itemDiv.addEventListener('click', () => {
+        if (item.upgrade) return;
+        handleModelSelection(item.id);
+        modelPopover.classList.add('hidden');
+      });
+
+      return itemDiv;
+    }
+
+    function handleModelSelection(itemId) {
+      const updateData = {};
+      if (itemId === 'auto') {
+        updateData.provider = 'nvidia';
+        updateData.nvidiaModel = 'qwen/qwen3.5-397b-a17b';
+      } else if (itemId.startsWith('nvidia:')) {
+        updateData.provider = 'nvidia';
+        updateData.nvidiaModel = itemId.substring(7);
+      } else if (itemId.startsWith('cloud:')) {
+        updateData.provider = 'cloud';
+        updateData.cloudModel = itemId.substring(6);
+      } else if (itemId.startsWith('ollama:')) {
+        updateData.provider = 'ollama';
+        updateData.ollamaModel = itemId.substring(7);
+      } else if (itemId.startsWith('copilot:')) {
+        vscode.postMessage({
+          command: 'showUpgradeMessage',
+          text: 'Copilot models require a connected Copilot account.'
+        });
+        return;
+      }
+
+      vscode.postMessage({
+        command: 'updateConfig',
+        data: updateData
+      });
+    }
+
+    toolbarModelBadge?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isHidden = modelPopover.classList.contains('hidden');
+      if (isHidden) {
+        modelPopover.classList.remove('hidden');
+        popoverSearch.value = '';
+        currentSearchQuery = '';
+        renderModelList();
+        popoverSearch.focus();
+      } else {
+        modelPopover.classList.add('hidden');
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (modelPopover && !modelPopover.contains(e.target) && e.target !== toolbarModelBadge) {
+        modelPopover.classList.add('hidden');
+      }
+    });
+
+    popoverSearch?.addEventListener('input', (e) => {
+      currentSearchQuery = e.target.value;
+      renderModelList();
+    });
+
+    popoverSettingsBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      modelPopover.classList.add('hidden');
+      setConfigPanelOpen(!isConfigOpen);
+    });
+
     // Populate inputs from configuration
     const config = window.initialConfig || {};
     
@@ -771,12 +1211,10 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     
     function fillForm(cfg) {
       if (!cfg) return;
+      window.currentConfigState = cfg;
       if (cfg.provider) {
         providerSelect.value = cfg.provider;
-        const badge = document.getElementById('toolbarModelBadge');
-        if (badge) {
-          badge.textContent = cfg.provider.toUpperCase();
-        }
+        updateBadgeText(cfg);
       }
       if (cfg.nvidiaApiKey !== undefined) nvidiaApiKey.value = cfg.nvidiaApiKey;
       if (cfg.nvidiaModel !== undefined) nvidiaModel.value = cfg.nvidiaModel;
@@ -793,6 +1231,7 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       }
       
       updateProviderFieldsVisibility(providerSelect.value);
+      renderModelList();
     }
     
     function updateProviderFieldsVisibility(provider) {
