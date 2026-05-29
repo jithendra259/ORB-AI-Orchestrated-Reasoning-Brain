@@ -18,6 +18,6 @@ export function getLLMProvider(providerType?: string, modelName?: string): LLMPr
       return new AnthropicProvider(modelName);
     case 'nvidia':
     default:
-      return new NvidiaProvider();
+      return new NvidiaProvider(modelName);
   }
 }

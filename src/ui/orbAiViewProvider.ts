@@ -349,6 +349,10 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       cloudBaseUrl: config.get<string>('cloudBaseUrl', 'https://api.openai.com/v1'),
       ollamaUrl: config.get<string>('ollamaUrl', 'http://localhost:11434'),
       ollamaModel: config.get<string>('ollamaModel', 'qwen2.5-coder:7b'),
+      anthropicApiKey: config.get<string>('anthropicApiKey', ''),
+      anthropicBaseUrl: config.get<string>('anthropicBaseUrl', 'https://api.anthropic.com'),
+      anthropicModel: config.get<string>('anthropicModel', 'claude-3-5-sonnet-latest'),
+      toolsSafety: config.get<string>('toolsSafety', 'safe'),
       systemPrompt: config.get<string>('systemPrompt', 'You are ORB AI, a helpful and knowledgeable codebase reasoning assistant. Analyze the repository structure and code to provide precise, clean, and helpful answers.'),
       temperature: config.get<number>('temperature', 0.5),
     });
@@ -1133,15 +1137,22 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     // Model selector popover catalog
     const modelCatalog = [
       { id: 'auto', name: 'Auto', provider: '', badge: 'Recommended', section: 'auto' },
+      // Nvidia models
+      { id: 'nvidia:qwen/qwen3.5-397b-a17b', name: 'Qwen 3.5 397B', provider: 'NVIDIA', badge: 'Balanced', badgeColor: '#4f46e5', section: 'cloud' },
+      { id: 'nvidia:deepseek-ai/deepseek-r1', name: 'DeepSeek R1', provider: 'NVIDIA', badge: 'Reasoning', badgeColor: '#7c3aed', section: 'cloud' },
       // Cloud models
       { id: 'cloud:gpt-4o-mini', name: 'gpt-4o-mini', provider: 'OpenAI', badge: 'Fast', badgeColor: '#2ea643', section: 'cloud' },
       { id: 'cloud:gpt-4o', name: 'gpt-4o', provider: 'OpenAI', badge: 'Smart', badgeColor: '#8a2be2', section: 'cloud' },
       { id: 'cloud:deepseek-coder', name: 'deepseek-coder', provider: 'OpenAI', badge: 'Smart', badgeColor: '#8a2be2', section: 'cloud' },
+      { id: 'cloud:deepseek-chat', name: 'deepseek-chat', provider: 'OpenAI', badge: 'Fast', badgeColor: '#2ea643', section: 'cloud' },
+      { id: 'cloud:deepseek-reasoner', name: 'deepseek-reasoner', provider: 'OpenAI', badge: 'Reasoning', badgeColor: '#7c3aed', section: 'cloud' },
       { id: 'anthropic:claude-3-5-sonnet-latest', name: 'claude-3-5-sonnet', provider: 'Anthropic', badge: 'Smart', badgeColor: '#8a2be2', section: 'cloud' },
+      { id: 'anthropic:claude-3-5-haiku-latest', name: 'claude-3-5-haiku', provider: 'Anthropic', badge: 'Fast', badgeColor: '#2ea643', section: 'cloud' },
       // Copilot / Upgrade mock models
       { id: 'copilot:claude-haiku-4.5', name: 'Claude Haiku 4.5', provider: 'Copilot', badge: '1x', section: 'copilot' },
       { id: 'upgrade:claude-sonnet-4.6', name: 'Claude Sonnet 4.6', provider: '', upgrade: true, section: 'copilot' },
-      { id: 'upgrade:gpt-5.4', name: 'GPT-5.4', provider: '', upgrade: true, section: 'copilot' }
+      { id: 'upgrade:gpt-5.4', name: 'GPT-5.4', provider: '', upgrade: true, section: 'copilot' },
+      { id: 'upgrade:o1-pro', name: 'GPT-o1-pro', provider: '', upgrade: true, section: 'copilot' }
     ];
 
     const activeSessionState = state.sessionSettings || {
@@ -1150,6 +1161,15 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       contextMode: 'auto',
       toolsMode: 'safe'
     };
+    // Ensure all fields are robustly initialized
+    if (!activeSessionState.provider) activeSessionState.provider = 'nvidia';
+    if (!activeSessionState.model) activeSessionState.model = 'auto';
+    if (!activeSessionState.contextMode) activeSessionState.contextMode = 'auto';
+    if (!activeSessionState.toolsMode) activeSessionState.toolsMode = 'safe';
+    if (!state.sessionSettings) {
+      state.sessionSettings = activeSessionState;
+      vscode.setState(state);
+    }
 
     let currentSearchQuery = '';
     window.isOllamaAvailable = true;

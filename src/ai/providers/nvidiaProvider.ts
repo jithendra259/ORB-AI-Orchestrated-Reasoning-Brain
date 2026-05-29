@@ -6,11 +6,11 @@ export class NvidiaProvider implements LLMProvider {
   private baseUrl: string;
   private model: string;
 
-  constructor() {
+  constructor(modelName?: string) {
     const config = vscode.workspace.getConfiguration('orb-ai');
     this.apiKey = config.get<string>('nvidiaApiKey');
     this.baseUrl = config.get<string>('nvidiaBaseUrl', 'https://integrate.api.nvidia.com/v1');
-    this.model = config.get<string>('nvidiaModel', 'qwen/qwen3.5-397b-a17b');
+    this.model = modelName || config.get<string>('nvidiaModel', 'qwen/qwen3.5-397b-a17b');
   }
 
   async *chat(messages: ChatMessage[]): AsyncGenerator<string> {
