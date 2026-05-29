@@ -16,6 +16,9 @@ export class CloudProvider implements LLMProvider {
   async *chat(messages: ChatMessage[]): AsyncGenerator<string> {
     if (!this.apiKey) throw new Error('API Key not configured in ORB AI settings');
 
+    const config = vscode.workspace.getConfiguration('orb-ai');
+    const temperature = config.get<number>('temperature', 0.5);
+
     const response = await fetch(`${this.baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -25,6 +28,7 @@ export class CloudProvider implements LLMProvider {
       body: JSON.stringify({
         model: this.model,
         messages,
+        temperature,
         stream: true,
       }),
     });

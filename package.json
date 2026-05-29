@@ -125,6 +125,18 @@
           "type": "string",
           "default": "qwen/qwen3.5-397b-a17b",
           "description": "NVIDIA Qwen model name"
+        },
+        "orb-ai.systemPrompt": {
+          "type": "string",
+          "default": "You are ORB AI, a helpful and knowledgeable codebase reasoning assistant. Analyze the repository structure and code to provide precise, clean, and helpful answers.",
+          "description": "System prompt instructing the AI assistant's behavior and persona."
+        },
+        "orb-ai.temperature": {
+          "type": "number",
+          "default": 0.5,
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Sampling temperature (0 = precise/deterministic, 1 = creative/diverse)."
         }
       }
     }

@@ -16,6 +16,9 @@ export class NvidiaProvider implements LLMProvider {
   async *chat(messages: ChatMessage[]): AsyncGenerator<string> {
     if (!this.apiKey) throw new Error('NVIDIA API Key not configured in ORB AI settings');
 
+    const config = vscode.workspace.getConfiguration('orb-ai');
+    const temperature = config.get<number>('temperature', 0.5);
+
     const response = await fetch(`${this.baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -27,7 +30,7 @@ export class NvidiaProvider implements LLMProvider {
         model: this.model,
         messages,
         max_tokens: 16384,
-        temperature: 0.6,
+        temperature,
         top_p: 0.95,
         top_k: 20,
         presence_penalty: 0,

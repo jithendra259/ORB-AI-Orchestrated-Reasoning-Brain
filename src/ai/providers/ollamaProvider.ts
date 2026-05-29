@@ -12,6 +12,9 @@ export class OllamaProvider implements LLMProvider {
   }
 
   async *chat(messages: ChatMessage[]): AsyncGenerator<string> {
+    const config = vscode.workspace.getConfiguration('orb-ai');
+    const temperature = config.get<number>('temperature', 0.5);
+
     const response = await fetch(`${this.baseUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -19,6 +22,9 @@ export class OllamaProvider implements LLMProvider {
         model: this.model,
         messages,
         stream: true,
+        options: {
+          temperature,
+        },
       }),
     });
 

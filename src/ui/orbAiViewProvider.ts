@@ -89,6 +89,8 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
                 cloudBaseUrl,
                 ollamaUrl,
                 ollamaModel,
+                systemPrompt,
+                temperature,
               } = message.data;
 
               if (provider !== undefined) {
@@ -117,6 +119,12 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
               }
               if (ollamaModel !== undefined) {
                 await config.update('ollamaModel', ollamaModel, vscode.ConfigurationTarget.Global);
+              }
+              if (systemPrompt !== undefined) {
+                await config.update('systemPrompt', systemPrompt, vscode.ConfigurationTarget.Global);
+              }
+              if (temperature !== undefined) {
+                await config.update('temperature', Number(temperature), vscode.ConfigurationTarget.Global);
               }
 
               vscode.window.showInformationMessage('ORB AI settings updated successfully.');
@@ -158,6 +166,8 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
         cloudBaseUrl: config.get<string>('cloudBaseUrl', 'https://api.openai.com/v1'),
         ollamaUrl: config.get<string>('ollamaUrl', 'http://localhost:11434'),
         ollamaModel: config.get<string>('ollamaModel', 'qwen2.5-coder:7b'),
+        systemPrompt: config.get<string>('systemPrompt', 'You are ORB AI, a helpful and knowledgeable codebase reasoning assistant. Analyze the repository structure and code to provide precise, clean, and helpful answers.'),
+        temperature: config.get<number>('temperature', 0.5),
       },
     });
     this.checkAndPushProviderStatus();
@@ -215,11 +225,21 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
         type: 'streamStart',
       });
 
+      const config = vscode.workspace.getConfiguration('orb-ai');
+      const systemPrompt = config.get<string>('systemPrompt', '');
+
       // Build messages array for LLM
       const messages = this.messageHistory.map((msg) => ({
         role: msg.role as 'user' | 'assistant' | 'system',
         content: msg.content,
       }));
+
+      if (systemPrompt) {
+        messages.unshift({
+          role: 'system',
+          content: systemPrompt,
+        });
+      }
 
       let fullResponse = '';
 
@@ -273,6 +293,8 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       cloudBaseUrl: config.get<string>('cloudBaseUrl', 'https://api.openai.com/v1'),
       ollamaUrl: config.get<string>('ollamaUrl', 'http://localhost:11434'),
       ollamaModel: config.get<string>('ollamaModel', 'qwen2.5-coder:7b'),
+      systemPrompt: config.get<string>('systemPrompt', 'You are ORB AI, a helpful and knowledgeable codebase reasoning assistant. Analyze the repository structure and code to provide precise, clean, and helpful answers.'),
+      temperature: config.get<number>('temperature', 0.5),
     });
 
     return `<!DOCTYPE html>
@@ -525,6 +547,16 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
           </div>
         </div>
 
+        <!-- Global Parameter Settings -->
+        <div class="form-group">
+          <label for="systemPrompt">System Prompt</label>
+          <textarea id="systemPrompt" rows="3" style="resize:vertical; padding:6px; border:1px solid var(--vscode-input-border); border-radius:4px; background:var(--vscode-input-background); color:var(--vscode-input-foreground); font-family:inherit; font-size:12px;"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="temperatureInput">Temperature: <span id="temperatureVal">0.5</span></label>
+          <input type="range" id="temperatureInput" min="0" max="2" step="0.1" style="width: 100%;" />
+        </div>
+
         <div class="config-buttons">
           <button id="saveConfigBtn">Save Configuration</button>
         </div>
@@ -608,6 +640,13 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     const cloudBaseUrl = document.getElementById('cloudBaseUrl');
     const ollamaUrl = document.getElementById('ollamaUrl');
     const ollamaModel = document.getElementById('ollamaModel');
+    const systemPrompt = document.getElementById('systemPrompt');
+    const temperatureInput = document.getElementById('temperatureInput');
+    const temperatureVal = document.getElementById('temperatureVal');
+
+    temperatureInput?.addEventListener('input', (e) => {
+      temperatureVal.textContent = e.target.value;
+    });
     
     function fillForm(cfg) {
       if (!cfg) return;
@@ -620,6 +659,11 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       if (cfg.cloudBaseUrl !== undefined) cloudBaseUrl.value = cfg.cloudBaseUrl;
       if (cfg.ollamaUrl !== undefined) ollamaUrl.value = cfg.ollamaUrl;
       if (cfg.ollamaModel !== undefined) ollamaModel.value = cfg.ollamaModel;
+      if (cfg.systemPrompt !== undefined) systemPrompt.value = cfg.systemPrompt;
+      if (cfg.temperature !== undefined) {
+        temperatureInput.value = cfg.temperature;
+        temperatureVal.textContent = cfg.temperature;
+      }
       
       updateProviderFieldsVisibility(providerSelect.value);
     }
@@ -675,7 +719,9 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
           cloudModel: cloudModel.value,
           cloudBaseUrl: cloudBaseUrl.value,
           ollamaUrl: ollamaUrl.value,
-          ollamaModel: ollamaModel.value
+          ollamaModel: ollamaModel.value,
+          systemPrompt: systemPrompt.value,
+          temperature: parseFloat(temperatureInput.value)
         }
       });
     });

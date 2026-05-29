@@ -79,11 +79,21 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         type: 'onStreamStart',
       });
 
+      const config = vscode.workspace.getConfiguration('orb-ai');
+      const systemPrompt = config.get<string>('systemPrompt', '');
+
       // Build messages array for LLM
       const messages = this.messageHistory.map((msg) => ({
         role: msg.role as 'user' | 'assistant' | 'system',
         content: msg.content,
       }));
+
+      if (systemPrompt) {
+        messages.unshift({
+          role: 'system',
+          content: systemPrompt,
+        });
+      }
 
       let fullResponse = '';
 
