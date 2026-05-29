@@ -387,10 +387,10 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     .path { font-family:var(--vscode-editor-font-family); font-size:12px; }
     .empty { color:var(--vscode-descriptionForeground); }
     /* Chat UI */
-    #chatContainer { max-height:250px; overflow-y:auto; margin-bottom:8px; }
-    .message { padding:6px 10px; border-radius:4px; margin:4px 0; }
-    .message.user { background:var(--vscode-input-background); }
-    .message.ai { background:var(--vscode-editorWidget-background); }
+    #chatContainer { max-height:320px; overflow-y:auto; margin-bottom:8px; scroll-behavior: smooth; }
+    .message { padding:8px 10px; border-radius:6px; margin:4px 0; line-height:1.5; word-break:break-word; white-space:pre-wrap; }
+    .message.user { background:var(--vscode-input-background); border-left: 3px solid var(--vscode-button-background); }
+    .message.ai { background:var(--vscode-editorWidget-background); border-left: 3px solid var(--vscode-textLink-foreground, #3794ff); }
     #loadingSpinner { margin-left:auto; margin-right:4px; }
     
     /* Premium Unified Chat Input Area */
@@ -411,17 +411,24 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     /* Model Popover Styles */
     .model-popover {
       position: absolute;
-      top: calc(100% + 4px);
-      left: 8px;
-      width: 280px;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      width: auto;
+      max-width: 100%;
       background: var(--vscode-menu-background, var(--vscode-editorWidget-background, #1e1e1e));
-      border: 1px solid var(--vscode-menu-border, var(--vscode-widget-border, #303030));
+      border: 1px solid var(--vscode-menu-border, var(--vscode-widget-border, #444));
       border-radius: 8px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-      z-index: 1000;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      z-index: 9999;
       display: flex;
       flex-direction: column;
-      max-height: 320px;
+      max-height: 300px;
+      overflow: hidden;
+    }
+    .model-popover .popover-content {
+      overflow-y: auto;
+      flex: 1;
     }
     .model-popover.hidden {
       display: none;
@@ -472,15 +479,17 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     
     .session-popover {
       position: absolute;
-      top: calc(100% + 4px);
+      top: calc(100% + 6px);
       background: var(--vscode-menu-background, var(--vscode-editorWidget-background, #1e1e1e));
-      border: 1px solid var(--vscode-menu-border, var(--vscode-widget-border, #303030));
+      border: 1px solid var(--vscode-menu-border, var(--vscode-widget-border, #444));
       border-radius: 8px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-      z-index: 1000;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      z-index: 9999;
       display: flex;
       flex-direction: column;
       padding: 4px 0;
+      max-height: 260px;
+      overflow-y: auto;
     }
     .session-popover.hidden {
       display: none;
@@ -1016,7 +1025,7 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       </div>
 
       <!-- Context Popover -->
-      <div class="session-popover hidden" id="contextPopover" style="left: 60px; width: 220px;">
+      <div class="session-popover hidden" id="contextPopover" style="left: 0; width: 200px;">
         <div class="popover-content">
           <div class="popover-item" data-value="auto">
             <div class="popover-item-check">✓</div>
@@ -1804,33 +1813,40 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       
       switch (message.type) {
         case 'userMessage':
-          addMessage(message.value, 'user');
+          // Skip — frontend already renders user message on send
           break;
           
-        case 'streamStart':
+        case 'streamStart': {
           loadingSpinner?.classList.remove('hidden');
+          // Remove any stale streaming div
+          const oldStream = document.getElementById('streamingMessage');
+          if (oldStream) oldStream.removeAttribute('id');
           const msgDiv = document.createElement('div');
           msgDiv.className = 'message ai';
           msgDiv.id = 'streamingMessage';
           msgDiv.textContent = '';
           chatContainer?.appendChild(msgDiv);
+          chatContainer?.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
           break;
+        }
           
-        case 'streamToken':
+        case 'streamToken': {
           const streamingMsg = document.getElementById('streamingMessage');
           if (streamingMsg) {
             streamingMsg.textContent += message.value;
             chatContainer?.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
           }
           break;
+        }
           
-        case 'streamEnd':
+        case 'streamEnd': {
           loadingSpinner?.classList.add('hidden');
           const finishedMsg = document.getElementById('streamingMessage');
           if (finishedMsg) {
             finishedMsg.removeAttribute('id');
           }
           break;
+        }
           
         case 'aiError':
           loadingSpinner?.classList.add('hidden');
