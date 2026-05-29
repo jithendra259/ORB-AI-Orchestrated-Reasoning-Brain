@@ -72,6 +72,9 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
         case 'checkProviderStatus':
           await this.checkAndPushProviderStatus();
           break;
+        case 'openSettings':
+          await vscode.commands.executeCommand('workbench.action.openSettings', '@ext:orb-ai');
+          break;
         case 'updateConfig':
           if (message.data) {
             try {
@@ -426,6 +429,22 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       font-size: 10px;
       display: inline-block;
     }
+    .icon-button {
+      background: transparent;
+      border: none;
+      color: var(--vscode-descriptionForeground);
+      padding: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: background 0.2s, color 0.2s;
+    }
+    .icon-button:hover {
+      background: var(--vscode-toolbar-hoverBackground, rgba(90, 93, 94, 0.31));
+      color: var(--vscode-foreground);
+    }
     </style>
 </head>
 <body>
@@ -434,6 +453,7 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       <h1>ORB AI</h1>
       <p class="subtitle">Orchestrated Reasoning Brain</p>
     </div>
+    <button id="openSettingsBtn" class="icon-button" title="Open Extension Settings">⚙️</button>
   </section>
 
     <!-- Collapsible Settings Panel -->
@@ -533,6 +553,11 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     const scanBtn = document.getElementById('scanRepository');
     const graphBtn = document.getElementById('showGraph');
     const sendBtn = document.getElementById('sendMessage');
+    const openSettingsBtn = document.getElementById('openSettingsBtn');
+
+    openSettingsBtn?.addEventListener('click', () => {
+      vscode.postMessage({ command: 'openSettings' });
+    });
     const inputBox = document.getElementById('messageInput');
     const chatContainer = document.getElementById('chatContainer');
     const loadingSpinner = document.getElementById('loadingSpinner');
