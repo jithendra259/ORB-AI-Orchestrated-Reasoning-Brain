@@ -6,11 +6,11 @@ export class CloudProvider implements LLMProvider {
   private baseUrl: string;
   private model: string;
 
-  constructor() {
+  constructor(modelName?: string) {
     const config = vscode.workspace.getConfiguration('orb-ai');
     this.apiKey = config.get<string>('apiKey');
     this.baseUrl = config.get<string>('cloudBaseUrl', 'https://api.openai.com/v1');
-    this.model = config.get<string>('cloudModel', 'gpt-4o-mini');
+    this.model = modelName || config.get<string>('cloudModel', 'gpt-4o-mini');
   }
 
   async *chat(messages: ChatMessage[]): AsyncGenerator<string> {

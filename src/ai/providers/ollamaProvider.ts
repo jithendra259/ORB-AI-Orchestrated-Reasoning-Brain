@@ -5,10 +5,10 @@ export class OllamaProvider implements LLMProvider {
   private baseUrl: string;
   private model: string;
 
-  constructor() {
+  constructor(modelName?: string) {
     const config = vscode.workspace.getConfiguration('orb-ai');
     this.baseUrl = config.get<string>('ollamaUrl', 'http://localhost:11434');
-    this.model = config.get<string>('ollamaModel', 'qwen2.5-coder:7b');
+    this.model = modelName || config.get<string>('ollamaModel', 'qwen2.5-coder:7b');
   }
 
   async *chat(messages: ChatMessage[]): AsyncGenerator<string> {

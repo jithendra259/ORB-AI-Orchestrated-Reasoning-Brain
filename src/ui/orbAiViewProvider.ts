@@ -66,11 +66,16 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
           break;
         case 'sendMessage':
           if (message.text) {
-            await this.handleUserMessage(message.text);
+            await this.handleUserMessage(message.text, message.data?.sessionSettings);
           }
           break;
         case 'checkProviderStatus':
-          await this.checkAndPushProviderStatus();
+          await this.checkAndPushProviderStatus(message.data?.provider, message.data?.model);
+          break;
+        case 'getModels':
+          if (message.data?.provider === 'ollama') {
+            await this.fetchAndPushOllamaModels();
+          }
           break;
         case 'openSettings':
           await vscode.commands.executeCommand('workbench.action.openSettings', '@ext:orb-ai');
@@ -94,6 +99,10 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
                 cloudBaseUrl,
                 ollamaUrl,
                 ollamaModel,
+                anthropicApiKey,
+                anthropicBaseUrl,
+                anthropicModel,
+                toolsSafety,
                 systemPrompt,
                 temperature,
               } = message.data;
@@ -124,6 +133,18 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
               }
               if (ollamaModel !== undefined) {
                 await config.update('ollamaModel', ollamaModel, vscode.ConfigurationTarget.Global);
+              }
+              if (anthropicApiKey !== undefined) {
+                await config.update('anthropicApiKey', anthropicApiKey, vscode.ConfigurationTarget.Global);
+              }
+              if (anthropicBaseUrl !== undefined) {
+                await config.update('anthropicBaseUrl', anthropicBaseUrl, vscode.ConfigurationTarget.Global);
+              }
+              if (anthropicModel !== undefined) {
+                await config.update('anthropicModel', anthropicModel, vscode.ConfigurationTarget.Global);
+              }
+              if (toolsSafety !== undefined) {
+                await config.update('toolsSafety', toolsSafety, vscode.ConfigurationTarget.Global);
               }
               if (systemPrompt !== undefined) {
                 await config.update('systemPrompt', systemPrompt, vscode.ConfigurationTarget.Global);
@@ -171,6 +192,10 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
         cloudBaseUrl: config.get<string>('cloudBaseUrl', 'https://api.openai.com/v1'),
         ollamaUrl: config.get<string>('ollamaUrl', 'http://localhost:11434'),
         ollamaModel: config.get<string>('ollamaModel', 'qwen2.5-coder:7b'),
+        anthropicApiKey: config.get<string>('anthropicApiKey', ''),
+        anthropicBaseUrl: config.get<string>('anthropicBaseUrl', 'https://api.anthropic.com'),
+        anthropicModel: config.get<string>('anthropicModel', 'claude-3-5-sonnet-latest'),
+        toolsSafety: config.get<string>('toolsSafety', 'safe'),
         systemPrompt: config.get<string>('systemPrompt', 'You are ORB AI, a helpful and knowledgeable codebase reasoning assistant. Analyze the repository structure and code to provide precise, clean, and helpful answers.'),
         temperature: config.get<number>('temperature', 0.5),
       },
@@ -178,17 +203,17 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     this.checkAndPushProviderStatus();
   }
 
-  private async checkAndPushProviderStatus(): Promise<void> {
+  private async checkAndPushProviderStatus(providerType?: string, modelName?: string): Promise<void> {
     try {
-      const provider = getLLMProvider();
+      const provider = getLLMProvider(providerType, modelName);
       const available = await provider.isAvailable();
       const config = vscode.workspace.getConfiguration('orb-ai');
-      const providerType = config.get<string>('provider', 'nvidia');
+      const providerTypeResolved = providerType || config.get<string>('provider', 'nvidia');
 
       this.view?.webview.postMessage({
         type: 'providerStatus',
         status: available ? 'connected' : 'error',
-        provider: providerType,
+        provider: providerTypeResolved,
       });
     } catch (err) {
       this.view?.webview.postMessage({
@@ -199,7 +224,30 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     }
   }
 
-  private async handleUserMessage(userMessage: string): Promise<void> {
+  private async fetchAndPushOllamaModels(): Promise<void> {
+    try {
+      const config = vscode.workspace.getConfiguration('orb-ai');
+      const ollamaUrl = config.get<string>('ollamaUrl', 'http://localhost:11434');
+      const response = await fetch(`${ollamaUrl}/api/tags`);
+      if (response.ok) {
+        const json = (await response.json()) as { models?: Array<{ name: string }> };
+        const models = json.models?.map((m) => m.name) || [];
+        this.view?.webview.postMessage({
+          type: 'ollamaModelsLoaded',
+          models: models,
+        });
+      } else {
+        throw new Error(`Failed to fetch models from Ollama: ${response.statusText}`);
+      }
+    } catch (err) {
+      this.view?.webview.postMessage({
+        type: 'ollamaModelsError',
+        error: String(err),
+      });
+    }
+  }
+
+  private async handleUserMessage(userMessage: string, sessionSettings?: any): Promise<void> {
     try {
       // Add user message to history
       this.messageHistory.push({
@@ -214,13 +262,16 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       });
 
       // Get LLM provider
-      const provider = getLLMProvider();
+      const providerType = sessionSettings?.provider;
+      const modelName = sessionSettings?.model;
+      const provider = getLLMProvider(providerType, modelName);
       const available = await provider.isAvailable();
 
       if (!available) {
         this.view?.webview.postMessage({
           type: 'aiError',
           value: '❌ LLM provider unavailable. Check ORB AI settings.',
+          isOllamaOffline: providerType === 'ollama',
         });
         return;
       }
@@ -356,9 +407,9 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     /* Model Popover Styles */
     .model-popover {
       position: absolute;
-      bottom: calc(100% + 8px);
-      left: 0;
-      right: 0;
+      top: calc(100% + 4px);
+      left: 8px;
+      width: 280px;
       background: var(--vscode-menu-background, var(--vscode-editorWidget-background, #1e1e1e));
       border: 1px solid var(--vscode-menu-border, var(--vscode-widget-border, #303030));
       border-radius: 8px;
@@ -370,6 +421,78 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     }
     .model-popover.hidden {
       display: none;
+    }
+    
+    /* Session Header Configuration Bar Styles */
+    .session-container {
+      position: relative;
+      margin-bottom: 8px;
+    }
+    .session-config-bar {
+      display: flex;
+      gap: 6px;
+      padding: 6px 8px;
+      background: var(--vscode-sideBar-background);
+      border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-panel-border));
+      font-size: 11px;
+      font-family: var(--vscode-font-family);
+      overflow-x: auto;
+      white-space: nowrap;
+      border-radius: 6px;
+    }
+    .session-config-btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: var(--vscode-toolbar-hoverBackground, rgba(90, 93, 94, 0.15));
+      color: var(--vscode-descriptionForeground);
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s, color 0.15s;
+    }
+    .session-config-btn:hover {
+      background: var(--vscode-toolbar-hoverBackground, rgba(90, 93, 94, 0.3));
+      color: var(--vscode-foreground);
+    }
+    .session-config-btn strong {
+      font-weight: 600;
+      color: var(--vscode-foreground);
+    }
+    .session-config-btn .dropdown-arrow {
+      font-size: 8px;
+      color: var(--vscode-descriptionForeground);
+      margin-left: 2px;
+    }
+    
+    .session-popover {
+      position: absolute;
+      top: calc(100% + 4px);
+      background: var(--vscode-menu-background, var(--vscode-editorWidget-background, #1e1e1e));
+      border: 1px solid var(--vscode-menu-border, var(--vscode-widget-border, #303030));
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      padding: 4px 0;
+    }
+    .session-popover.hidden {
+      display: none;
+    }
+    
+    .popover-item-badge-pill {
+      font-size: 8px;
+      font-weight: 600;
+      padding: 1px 4px;
+      border-radius: 3px;
+      margin-left: 6px;
+      color: #ffffff;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      display: inline-block;
+      line-height: 1.2;
     }
     .popover-search-container {
       display: flex;
@@ -759,6 +882,7 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
             <option value="nvidia">Nvidia Qwen (Recommended)</option>
             <option value="cloud">Cloud OpenAI Compatible</option>
             <option value="ollama">Ollama Local LLM</option>
+            <option value="anthropic">Anthropic Claude</option>
           </select>
         </div>
 
@@ -812,6 +936,25 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
           </div>
         </div>
 
+        <!-- Anthropic Settings -->
+        <div id="anthropicSettings" class="provider-fields hidden">
+          <div class="form-group">
+            <label for="anthropicApiKey">Anthropic API Key</label>
+            <div class="password-input-wrapper">
+              <input type="password" id="anthropicApiKey" placeholder="sk-ant-..." />
+              <span class="toggle-password" id="toggleAnthropicKey">👁️</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="anthropicModel">Model Name</label>
+            <input type="text" id="anthropicModel" />
+          </div>
+          <div class="form-group">
+            <label for="anthropicBaseUrl">API Base URL</label>
+            <input type="text" id="anthropicBaseUrl" />
+          </div>
+        </div>
+
         <!-- Global Parameter Settings -->
         <div class="form-group">
           <label for="systemPrompt">System Prompt</label>
@@ -820,6 +963,14 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
         <div class="form-group">
           <label for="temperatureInput">Temperature: <span id="temperatureVal">0.5</span></label>
           <input type="range" id="temperatureInput" min="0" max="2" step="0.1" style="width: 100%;" />
+        </div>
+        <div class="form-group">
+          <label for="toolsSafetySelect">Tool Execution Safety</label>
+          <select id="toolsSafetySelect">
+            <option value="safe">Ask before running (Safe)</option>
+            <option value="readOnly">Auto-run read-only</option>
+            <option value="dangerous">Auto-run all (Dangerous)</option>
+          </select>
         </div>
 
         <div class="config-buttons">
@@ -835,9 +986,21 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     </div>
 
     <!-- Chat UI -->
-    <div id="chatContainer"></div>
-    <div class="chat-input-container">
-      <!-- Floating Model Selector Popover -->
+    <div class="session-container">
+      <div class="session-config-bar">
+        <div class="session-config-btn" id="sessionModelBtn" title="Choose Active Model">
+          Model: <strong id="sessionModelLabel">Auto</strong> <span class="dropdown-arrow">▼</span>
+        </div>
+        <div class="session-config-btn" id="sessionContextBtn" title="Choose Context Mode">
+          Context: <strong id="sessionContextLabel">Auto 🕸️</strong> <span class="dropdown-arrow">▼</span>
+        </div>
+        <div class="session-config-btn" id="sessionToolsBtn" title="Choose Tool Safety">
+          Tools: <strong id="sessionToolsLabel">Ask First 🛡️</strong> <span class="dropdown-arrow">▼</span>
+        </div>
+      </div>
+
+      <!-- Floating Popovers -->
+      <!-- Model Selector Popover -->
       <div class="model-popover hidden" id="modelPopover">
         <div class="popover-search-container">
           <input type="text" id="popoverSearch" placeholder="Search models" autocomplete="off" />
@@ -847,6 +1010,53 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
         </div>
         <div class="popover-content" id="popoverContentList"></div>
       </div>
+
+      <!-- Context Popover -->
+      <div class="session-popover hidden" id="contextPopover" style="left: 60px; width: 220px;">
+        <div class="popover-content">
+          <div class="popover-item" data-value="auto">
+            <div class="popover-item-check">✓</div>
+            <span class="popover-item-name">Smart Graph (Auto)</span>
+            <span class="popover-item-provider">🕸️</span>
+          </div>
+          <div class="popover-item" data-value="file">
+            <div class="popover-item-check"></div>
+            <span class="popover-item-name">Current File Only</span>
+            <span class="popover-item-provider">📄</span>
+          </div>
+          <div class="popover-item" data-value="workspace">
+            <div class="popover-item-check"></div>
+            <span class="popover-item-name">Whole Workspace</span>
+            <span class="popover-item-provider">📂</span>
+            <span class="popover-item-badge" style="background:var(--vscode-statusBadge-background); color:var(--vscode-statusBadge-foreground); font-size:9px; font-weight:600; padding:1px 4px; border-radius:3px; margin-left:6px;">Warning</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tools Popover -->
+      <div class="session-popover hidden" id="toolsPopover" style="right: 8px; width: 240px;">
+        <div class="popover-content">
+          <div class="popover-item" data-value="safe">
+            <div class="popover-item-check">✓</div>
+            <span class="popover-item-name">Ask before running (Safe)</span>
+            <span class="popover-item-provider">🛡️</span>
+          </div>
+          <div class="popover-item" data-value="readOnly">
+            <div class="popover-item-check"></div>
+            <span class="popover-item-name">Auto-run read-only</span>
+            <span class="popover-item-provider">⚡</span>
+          </div>
+          <div class="popover-item" data-value="dangerous">
+            <div class="popover-item-check"></div>
+            <span class="popover-item-name">Auto-run all (Dangerous)</span>
+            <span class="popover-item-provider">⚠️</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="chatContainer"></div>
+    <div class="chat-input-container">
       <textarea id="messageInput" placeholder="Ask ORB AI..." rows="1"></textarea>
       <div class="chat-input-toolbar">
         <div class="toolbar-left">
@@ -855,8 +1065,6 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
           <button class="toolbar-btn" id="toolbarCodeBtn" title="Insert Code Block">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
           </button>
-          <span class="toolbar-separator">|</span>
-          <div class="toolbar-badge" id="toolbarModelBadge">AUTO</div>
           <span class="toolbar-separator">|</span>
           <button class="toolbar-btn" id="toolbarSettingsBtn" title="Toggle Inline Settings">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
@@ -924,32 +1132,40 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
 
     // Model selector popover catalog
     const modelCatalog = [
-      { id: 'auto', name: 'Auto', provider: '', section: 'auto' },
-      { id: 'nvidia:qwen/qwen3.5-397b-a17b', name: 'qwen3.5-397b-a17b', provider: 'Nvidia', section: 'pinned' },
-      { id: 'cloud:gpt-4o-mini', name: 'gpt-4o-mini', provider: 'Cloud', section: 'pinned' },
-      { id: 'ollama:qwen2.5-coder:7b', name: 'qwen2.5-coder:7b', provider: 'Ollama', section: 'pinned' },
-      { id: 'ollama:qwen3-coder-next:cloud', name: 'qwen3-coder-next:cloud', provider: 'Ollama', section: 'pinned' },
-      { id: 'ollama:gpt-oss:120b-cloud', name: 'gpt-oss:120b-cloud', provider: 'Ollama', section: 'pinned' },
-      { id: 'ollama:qwen3:1.7b', name: 'qwen3:1.7b', provider: 'Ollama', section: 'pinned' },
-      // Mock items matching screenshot
+      { id: 'auto', name: 'Auto', provider: '', badge: 'Recommended', section: 'auto' },
+      // Cloud models
+      { id: 'cloud:gpt-4o-mini', name: 'gpt-4o-mini', provider: 'OpenAI', badge: 'Fast', badgeColor: '#2ea643', section: 'cloud' },
+      { id: 'cloud:gpt-4o', name: 'gpt-4o', provider: 'OpenAI', badge: 'Smart', badgeColor: '#8a2be2', section: 'cloud' },
+      { id: 'cloud:deepseek-coder', name: 'deepseek-coder', provider: 'OpenAI', badge: 'Smart', badgeColor: '#8a2be2', section: 'cloud' },
+      { id: 'anthropic:claude-3-5-sonnet-latest', name: 'claude-3-5-sonnet', provider: 'Anthropic', badge: 'Smart', badgeColor: '#8a2be2', section: 'cloud' },
+      // Copilot / Upgrade mock models
       { id: 'copilot:claude-haiku-4.5', name: 'Claude Haiku 4.5', provider: 'Copilot', badge: '1x', section: 'copilot' },
       { id: 'upgrade:claude-sonnet-4.6', name: 'Claude Sonnet 4.6', provider: '', upgrade: true, section: 'copilot' },
-      { id: 'upgrade:gpt-5.4', name: 'GPT-5.4', provider: '', upgrade: true, section: 'copilot' },
-      // Other models (collapsible)
-      { id: 'cloud:gpt-4o', name: 'gpt-4o', provider: 'Cloud', section: 'other' },
-      { id: 'ollama:llama3', name: 'llama3', provider: 'Ollama', section: 'other' },
-      { id: 'ollama:mistral', name: 'mistral', provider: 'Ollama', section: 'other' }
+      { id: 'upgrade:gpt-5.4', name: 'GPT-5.4', provider: '', upgrade: true, section: 'copilot' }
     ];
 
-    let currentSearchQuery = '';
-    let isOtherModelsExpanded = false;
+    const activeSessionState = state.sessionSettings || {
+      provider: 'nvidia',
+      model: 'auto',
+      contextMode: 'auto',
+      toolsMode: 'safe'
+    };
 
-    // DOM Elements for Model Popover
+    let currentSearchQuery = '';
+    window.isOllamaAvailable = true;
+
+    // DOM Elements for Model Popover and Session Configuration
+    const sessionModelBtn = document.getElementById('sessionModelBtn');
+    const sessionContextBtn = document.getElementById('sessionContextBtn');
+    const sessionToolsBtn = document.getElementById('sessionToolsBtn');
+
     const modelPopover = document.getElementById('modelPopover');
+    const contextPopover = document.getElementById('contextPopover');
+    const toolsPopover = document.getElementById('toolsPopover');
+
     const popoverSearch = document.getElementById('popoverSearch');
     const popoverContentList = document.getElementById('popoverContentList');
     const popoverSettingsBtn = document.getElementById('popoverSettingsBtn');
-    const toolbarModelBadge = document.getElementById('toolbarModelBadge');
 
     function getActiveModelId(cfg) {
       if (!cfg) return 'auto';
@@ -966,29 +1182,77 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       if (provider === 'ollama') {
         return 'ollama:' + cfg.ollamaModel;
       }
+      if (provider === 'anthropic') {
+        return 'anthropic:' + cfg.anthropicModel;
+      }
       return 'auto';
     }
 
-    function updateBadgeText(cfg) {
-      if (!cfg || !toolbarModelBadge) return;
-      const activeId = getActiveModelId(cfg);
-      if (activeId === 'auto') {
-        toolbarModelBadge.textContent = 'Auto';
-      } else if (activeId.startsWith('nvidia:')) {
-        toolbarModelBadge.textContent = activeId.substring(7).split('/').pop() || 'Nvidia';
-      } else if (activeId.startsWith('cloud:')) {
-        toolbarModelBadge.textContent = activeId.substring(6);
-      } else if (activeId.startsWith('ollama:')) {
-        toolbarModelBadge.textContent = activeId.substring(7);
+    function updateSessionBarLabels() {
+      const modelLabel = document.getElementById('sessionModelLabel');
+      if (modelLabel) {
+        if (activeSessionState.model === 'auto') {
+          modelLabel.textContent = 'Auto';
+        } else {
+          const name = activeSessionState.model;
+          modelLabel.textContent = name.split('/').pop() || name;
+        }
+      }
+
+      const contextLabel = document.getElementById('sessionContextLabel');
+      if (contextLabel) {
+        if (activeSessionState.contextMode === 'auto') {
+          contextLabel.textContent = 'Auto 🕸️';
+        } else if (activeSessionState.contextMode === 'file') {
+          contextLabel.textContent = 'File Only 📄';
+        } else if (activeSessionState.contextMode === 'workspace') {
+          contextLabel.textContent = 'Workspace 📂';
+        }
+      }
+
+      const toolsLabel = document.getElementById('sessionToolsLabel');
+      if (toolsLabel) {
+        if (activeSessionState.toolsMode === 'safe') {
+          toolsLabel.textContent = 'Ask First 🛡️';
+        } else if (activeSessionState.toolsMode === 'readOnly') {
+          toolsLabel.textContent = 'Auto Read ⚡';
+        } else if (activeSessionState.toolsMode === 'dangerous') {
+          toolsLabel.textContent = 'Auto All ⚠️';
+        }
       }
     }
+
+    function updateSessionSettings(updates) {
+      Object.assign(activeSessionState, updates);
+      state.sessionSettings = activeSessionState;
+      vscode.setState(state);
+      
+      updateSessionBarLabels();
+      renderModelList();
+      
+      vscode.postMessage({
+        command: 'checkProviderStatus',
+        data: {
+          provider: activeSessionState.provider,
+          model: activeSessionState.model === 'auto' ? undefined : activeSessionState.model
+        }
+      });
+    }
+
+    window.switchToCloudFallback = function() {
+      updateSessionSettings({
+        provider: 'cloud',
+        model: 'gpt-4o-mini'
+      });
+      addMessage('Switched to Cloud Fallback (gpt-4o-mini)', 'ai');
+    };
 
     function renderModelList() {
       if (!popoverContentList) return;
       popoverContentList.innerHTML = '';
 
       const query = currentSearchQuery.toLowerCase().trim();
-      const activeId = getActiveModelId(window.currentConfigState);
+      const activeId = activeSessionState.model === 'auto' ? 'auto' : (activeSessionState.provider + ':' + activeSessionState.model);
 
       const matchesQuery = (item) => {
         if (!query) return true;
@@ -996,74 +1260,75 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       };
 
       const autoItems = modelCatalog.filter(i => i.section === 'auto' && matchesQuery(i));
-      const pinnedItems = modelCatalog.filter(i => i.section === 'pinned' && matchesQuery(i));
+      const localItems = modelCatalog.filter(i => i.section === 'local' && matchesQuery(i));
+      const cloudItems = modelCatalog.filter(i => i.section === 'cloud' && matchesQuery(i));
       const copilotItems = modelCatalog.filter(i => i.section === 'copilot' && matchesQuery(i));
-      const otherItems = modelCatalog.filter(i => i.section === 'other' && matchesQuery(i));
 
       autoItems.forEach(item => {
         popoverContentList.appendChild(createModelItemElement(item, activeId === 'auto'));
       });
 
-      if (pinnedItems.length > 0) {
-        const title = document.createElement('div');
-        title.className = 'popover-section-title';
-        title.textContent = 'Pinned';
-        popoverContentList.appendChild(title);
-        pinnedItems.forEach(item => {
+      const localHeader = document.createElement('div');
+      localHeader.className = 'popover-section-title';
+      
+      if (window.isOllamaAvailable === false) {
+        localHeader.innerHTML = 'LOCAL (Offline) <span style="color:#f85149; font-weight:normal; text-transform:none; margin-left:6px;">⚫ disconnected</span>';
+        popoverContentList.appendChild(localHeader);
+        
+        const offlineWarning = document.createElement('div');
+        offlineWarning.className = 'popover-item';
+        offlineWarning.style.color = 'var(--vscode-descriptionForeground)';
+        offlineWarning.style.fontSize = '11px';
+        offlineWarning.style.padding = '6px 12px';
+        offlineWarning.style.cursor = 'pointer';
+        offlineWarning.innerHTML = '<span style="color:#d29922; margin-right:4px;">⚠️</span> Ollama offline. Click to switch to Cloud.';
+        offlineWarning.addEventListener('click', () => {
+          window.switchToCloudFallback();
+          modelPopover.classList.add('hidden');
+        });
+        popoverContentList.appendChild(offlineWarning);
+      } else {
+        localHeader.innerHTML = 'LOCAL (Offline) <span style="color:#3fb950; font-weight:normal; text-transform:none; margin-left:6px;">🟢 active</span>';
+        popoverContentList.appendChild(localHeader);
+        
+        if (localItems.length === 0) {
+          const noLocal = document.createElement('div');
+          noLocal.className = 'popover-item';
+          noLocal.style.color = 'var(--vscode-descriptionForeground)';
+          noLocal.style.fontSize = '11px';
+          noLocal.style.cursor = 'default';
+          noLocal.textContent = 'No local models found';
+          popoverContentList.appendChild(noLocal);
+        } else {
+          localItems.forEach(item => {
+            popoverContentList.appendChild(createModelItemElement(item, activeId === item.id));
+          });
+        }
+      }
+
+      if (cloudItems.length > 0) {
+        const cloudHeader = document.createElement('div');
+        cloudHeader.className = 'popover-section-title';
+        cloudHeader.textContent = 'CLOUD (API)';
+        popoverContentList.appendChild(cloudHeader);
+        
+        cloudItems.forEach(item => {
           popoverContentList.appendChild(createModelItemElement(item, activeId === item.id));
         });
       }
 
       if (copilotItems.length > 0) {
+        const copilotHeader = document.createElement('div');
+        copilotHeader.className = 'popover-section-title';
+        copilotHeader.textContent = 'Copilot / Premium';
+        popoverContentList.appendChild(copilotHeader);
+        
         copilotItems.forEach(item => {
           popoverContentList.appendChild(createModelItemElement(item, activeId === item.id));
         });
       }
 
-      if (otherItems.length > 0) {
-        const collapsibleHeader = document.createElement('div');
-        collapsibleHeader.className = 'popover-collapsible-header';
-        
-        const chevron = document.createElement('span');
-        chevron.className = 'popover-collapsible-chevron';
-        chevron.textContent = '▶';
-        
-        const forceExpand = !!query;
-        const expanded = forceExpand || isOtherModelsExpanded;
-        if (expanded) {
-          chevron.classList.add('expanded');
-          chevron.textContent = '▼';
-        }
-
-        collapsibleHeader.appendChild(chevron);
-        
-        const titleSpan = document.createElement('span');
-        titleSpan.textContent = 'Other Models';
-        collapsibleHeader.appendChild(titleSpan);
-
-        collapsibleHeader.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (query) return;
-          isOtherModelsExpanded = !isOtherModelsExpanded;
-          renderModelList();
-        });
-
-        popoverContentList.appendChild(collapsibleHeader);
-
-        const collapsibleContent = document.createElement('div');
-        collapsibleContent.className = 'popover-collapsible-content';
-        if (expanded) {
-          collapsibleContent.classList.add('expanded');
-        }
-
-        otherItems.forEach(item => {
-          collapsibleContent.appendChild(createModelItemElement(item, activeId === item.id));
-        });
-
-        popoverContentList.appendChild(collapsibleContent);
-      }
-
-      if (autoItems.length === 0 && pinnedItems.length === 0 && copilotItems.length === 0 && otherItems.length === 0) {
+      if (autoItems.length === 0 && localItems.length === 0 && cloudItems.length === 0 && copilotItems.length === 0) {
         const emptyDiv = document.createElement('div');
         emptyDiv.className = 'popover-item';
         emptyDiv.style.color = 'var(--vscode-descriptionForeground)';
@@ -1101,8 +1366,14 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
 
       if (item.badge) {
         const badgeSpan = document.createElement('span');
-        badgeSpan.className = 'popover-item-badge';
+        badgeSpan.className = 'popover-item-badge-pill';
         badgeSpan.textContent = item.badge;
+        if (item.badgeColor) {
+          badgeSpan.style.backgroundColor = item.badgeColor;
+          badgeSpan.style.color = '#ffffff';
+        } else {
+          badgeSpan.style.backgroundColor = 'var(--vscode-sideBarSectionHeader-background, rgba(128, 128, 128, 0.2))';
+        }
         itemDiv.appendChild(badgeSpan);
       }
 
@@ -1123,43 +1394,43 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
 
       itemDiv.addEventListener('click', () => {
         if (item.upgrade) return;
-        handleModelSelection(item.id);
+        
+        let providerVal = 'nvidia';
+        let modelVal = 'auto';
+        
+        if (item.id === 'auto') {
+          providerVal = 'nvidia';
+          modelVal = 'auto';
+        } else {
+          const parts = item.id.split(':');
+          providerVal = parts[0];
+          modelVal = parts.slice(1).join(':');
+        }
+        
+        if (providerVal === 'copilot') {
+          vscode.postMessage({
+            command: 'showUpgradeMessage',
+            text: 'Copilot models require a connected Copilot account.'
+          });
+          return;
+        }
+        
+        updateSessionSettings({
+          provider: providerVal,
+          model: modelVal
+        });
+        
         modelPopover.classList.add('hidden');
       });
 
       return itemDiv;
     }
 
-    function handleModelSelection(itemId) {
-      const updateData = {};
-      if (itemId === 'auto') {
-        updateData.provider = 'nvidia';
-        updateData.nvidiaModel = 'qwen/qwen3.5-397b-a17b';
-      } else if (itemId.startsWith('nvidia:')) {
-        updateData.provider = 'nvidia';
-        updateData.nvidiaModel = itemId.substring(7);
-      } else if (itemId.startsWith('cloud:')) {
-        updateData.provider = 'cloud';
-        updateData.cloudModel = itemId.substring(6);
-      } else if (itemId.startsWith('ollama:')) {
-        updateData.provider = 'ollama';
-        updateData.ollamaModel = itemId.substring(7);
-      } else if (itemId.startsWith('copilot:')) {
-        vscode.postMessage({
-          command: 'showUpgradeMessage',
-          text: 'Copilot models require a connected Copilot account.'
-        });
-        return;
-      }
-
-      vscode.postMessage({
-        command: 'updateConfig',
-        data: updateData
-      });
-    }
-
-    toolbarModelBadge?.addEventListener('click', (e) => {
+    sessionModelBtn?.addEventListener('click', (e) => {
       e.stopPropagation();
+      contextPopover?.classList.add('hidden');
+      toolsPopover?.classList.add('hidden');
+      
       const isHidden = modelPopover.classList.contains('hidden');
       if (isHidden) {
         modelPopover.classList.remove('hidden');
@@ -1167,14 +1438,51 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
         currentSearchQuery = '';
         renderModelList();
         popoverSearch.focus();
+        
+        // Fetch dynamic Ollama models
+        vscode.postMessage({ command: 'getModels', data: { provider: 'ollama' } });
       } else {
         modelPopover.classList.add('hidden');
       }
     });
 
+    sessionContextBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      modelPopover?.classList.add('hidden');
+      toolsPopover?.classList.add('hidden');
+      
+      const isHidden = contextPopover.classList.contains('hidden');
+      if (isHidden) {
+        contextPopover.classList.remove('hidden');
+        renderContextPopoverList();
+      } else {
+        contextPopover.classList.add('hidden');
+      }
+    });
+
+    sessionToolsBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      modelPopover?.classList.add('hidden');
+      contextPopover?.classList.add('hidden');
+      
+      const isHidden = toolsPopover.classList.contains('hidden');
+      if (isHidden) {
+        toolsPopover.classList.remove('hidden');
+        renderToolsPopoverList();
+      } else {
+        toolsPopover.classList.add('hidden');
+      }
+    });
+
     document.addEventListener('click', (e) => {
-      if (modelPopover && !modelPopover.contains(e.target) && e.target !== toolbarModelBadge) {
+      if (modelPopover && !modelPopover.contains(e.target) && !sessionModelBtn?.contains(e.target)) {
         modelPopover.classList.add('hidden');
+      }
+      if (contextPopover && !contextPopover.contains(e.target) && !sessionContextBtn?.contains(e.target)) {
+        contextPopover.classList.add('hidden');
+      }
+      if (toolsPopover && !toolsPopover.contains(e.target) && !sessionToolsBtn?.contains(e.target)) {
+        toolsPopover.classList.add('hidden');
       }
     });
 
@@ -1189,6 +1497,58 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       setConfigPanelOpen(!isConfigOpen);
     });
 
+    function renderContextPopoverList() {
+      if (!contextPopover) return;
+      const items = contextPopover.querySelectorAll('.popover-item');
+      items.forEach(item => {
+        const val = item.getAttribute('data-value');
+        const check = item.querySelector('.popover-item-check');
+        if (check) {
+          if (activeSessionState.contextMode === val) {
+            check.textContent = '✓';
+            item.classList.add('selected');
+          } else {
+            check.textContent = '';
+            item.classList.remove('selected');
+          }
+        }
+        
+        if (!item.hasClickListener) {
+          item.hasClickListener = true;
+          item.addEventListener('click', () => {
+            updateSessionSettings({ contextMode: val });
+            contextPopover.classList.add('hidden');
+          });
+        }
+      });
+    }
+
+    function renderToolsPopoverList() {
+      if (!toolsPopover) return;
+      const items = toolsPopover.querySelectorAll('.popover-item');
+      items.forEach(item => {
+        const val = item.getAttribute('data-value');
+        const check = item.querySelector('.popover-item-check');
+        if (check) {
+          if (activeSessionState.toolsMode === val) {
+            check.textContent = '✓';
+            item.classList.add('selected');
+          } else {
+            check.textContent = '';
+            item.classList.remove('selected');
+          }
+        }
+        
+        if (!item.hasClickListener) {
+          item.hasClickListener = true;
+          item.addEventListener('click', () => {
+            updateSessionSettings({ toolsMode: val });
+            toolsPopover.classList.add('hidden');
+          });
+        }
+      });
+    }
+
     // Populate inputs from configuration
     const config = window.initialConfig || {};
     
@@ -1201,6 +1561,10 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     const cloudBaseUrl = document.getElementById('cloudBaseUrl');
     const ollamaUrl = document.getElementById('ollamaUrl');
     const ollamaModel = document.getElementById('ollamaModel');
+    const anthropicApiKey = document.getElementById('anthropicApiKey');
+    const anthropicModel = document.getElementById('anthropicModel');
+    const anthropicBaseUrl = document.getElementById('anthropicBaseUrl');
+    const toolsSafetySelect = document.getElementById('toolsSafetySelect');
     const systemPrompt = document.getElementById('systemPrompt');
     const temperatureInput = document.getElementById('temperatureInput');
     const temperatureVal = document.getElementById('temperatureVal');
@@ -1209,12 +1573,34 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       temperatureVal.textContent = e.target.value;
     });
     
+    let hasInitializedSession = false;
+
     function fillForm(cfg) {
       if (!cfg) return;
       window.currentConfigState = cfg;
+      
+      if (!hasInitializedSession) {
+        hasInitializedSession = true;
+        if (!state.sessionSettings) {
+          activeSessionState.provider = cfg.provider || 'nvidia';
+          if (cfg.provider === 'nvidia') {
+            activeSessionState.model = 'auto';
+          } else if (cfg.provider === 'cloud') {
+            activeSessionState.model = cfg.cloudModel || 'gpt-4o-mini';
+          } else if (cfg.provider === 'ollama') {
+            activeSessionState.model = cfg.ollamaModel || 'qwen2.5-coder:7b';
+          } else if (cfg.provider === 'anthropic') {
+            activeSessionState.model = cfg.anthropicModel || 'claude-3-5-sonnet-latest';
+          }
+          activeSessionState.toolsMode = cfg.toolsSafety || 'safe';
+          state.sessionSettings = activeSessionState;
+          vscode.setState(state);
+        }
+        updateSessionBarLabels();
+      }
+
       if (cfg.provider) {
         providerSelect.value = cfg.provider;
-        updateBadgeText(cfg);
       }
       if (cfg.nvidiaApiKey !== undefined) nvidiaApiKey.value = cfg.nvidiaApiKey;
       if (cfg.nvidiaModel !== undefined) nvidiaModel.value = cfg.nvidiaModel;
@@ -1224,6 +1610,10 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       if (cfg.cloudBaseUrl !== undefined) cloudBaseUrl.value = cfg.cloudBaseUrl;
       if (cfg.ollamaUrl !== undefined) ollamaUrl.value = cfg.ollamaUrl;
       if (cfg.ollamaModel !== undefined) ollamaModel.value = cfg.ollamaModel;
+      if (cfg.anthropicApiKey !== undefined) anthropicApiKey.value = cfg.anthropicApiKey;
+      if (cfg.anthropicModel !== undefined) anthropicModel.value = cfg.anthropicModel;
+      if (cfg.anthropicBaseUrl !== undefined) anthropicBaseUrl.value = cfg.anthropicBaseUrl;
+      if (cfg.toolsSafety !== undefined) toolsSafetySelect.value = cfg.toolsSafety;
       if (cfg.systemPrompt !== undefined) systemPrompt.value = cfg.systemPrompt;
       if (cfg.temperature !== undefined) {
         temperatureInput.value = cfg.temperature;
@@ -1238,6 +1628,7 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       document.getElementById('nvidiaSettings').classList.add('hidden');
       document.getElementById('cloudSettings').classList.add('hidden');
       document.getElementById('ollamaSettings').classList.add('hidden');
+      document.getElementById('anthropicSettings').classList.add('hidden');
       
       if (provider === 'nvidia') {
         document.getElementById('nvidiaSettings').classList.remove('hidden');
@@ -1245,6 +1636,8 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
         document.getElementById('cloudSettings').classList.remove('hidden');
       } else if (provider === 'ollama') {
         document.getElementById('ollamaSettings').classList.remove('hidden');
+      } else if (provider === 'anthropic') {
+        document.getElementById('anthropicSettings').classList.remove('hidden');
       }
     }
     
@@ -1270,6 +1663,7 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     }
     setupPasswordToggle('toggleNvidiaKey', 'nvidiaApiKey');
     setupPasswordToggle('toggleCloudKey', 'cloudApiKey');
+    setupPasswordToggle('toggleAnthropicKey', 'anthropicApiKey');
     
     // Save Config
     const saveConfigBtn = document.getElementById('saveConfigBtn');
@@ -1286,6 +1680,10 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
           cloudBaseUrl: cloudBaseUrl.value,
           ollamaUrl: ollamaUrl.value,
           ollamaModel: ollamaModel.value,
+          anthropicApiKey: anthropicApiKey.value,
+          anthropicModel: anthropicModel.value,
+          anthropicBaseUrl: anthropicBaseUrl.value,
+          toolsSafety: toolsSafetySelect.value,
           systemPrompt: systemPrompt.value,
           temperature: parseFloat(temperatureInput.value)
         }
@@ -1300,6 +1698,14 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       chatContainer?.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
     }
 
+    function addMessageWithHTML(htmlContent, author) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'message ' + author;
+      msgDiv.innerHTML = htmlContent;
+      chatContainer?.appendChild(msgDiv);
+      chatContainer?.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+    }
+
     sendBtn?.addEventListener('click', () => {
       const text = inputBox?.value.trim();
       if (!text) { return; }
@@ -1309,7 +1715,18 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
         inputBox.style.height = 'auto';
       }
       loadingSpinner?.classList.remove('hidden');
-      vscode.postMessage({ command: 'sendMessage', text });
+      vscode.postMessage({
+        command: 'sendMessage',
+        text: text,
+        data: {
+          sessionSettings: {
+            provider: activeSessionState.provider,
+            model: activeSessionState.model === 'auto' ? undefined : activeSessionState.model,
+            contextMode: activeSessionState.contextMode,
+            toolsMode: activeSessionState.toolsMode
+          }
+        }
+      });
     });
 
     // Support Enter to send and Shift+Enter for newlines
@@ -1353,7 +1770,13 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     });
 
     // Request initial provider status check
-    vscode.postMessage({ command: 'checkProviderStatus' });
+    vscode.postMessage({
+      command: 'checkProviderStatus',
+      data: {
+        provider: activeSessionState.provider,
+        model: activeSessionState.model === 'auto' ? undefined : activeSessionState.model
+      }
+    });
 
     // Receive messages from extension
     window.addEventListener('message', event => {
@@ -1366,7 +1789,6 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
           
         case 'streamStart':
           loadingSpinner?.classList.remove('hidden');
-          // Create a new AI message div for streaming
           const msgDiv = document.createElement('div');
           msgDiv.className = 'message ai';
           msgDiv.id = 'streamingMessage';
@@ -1375,7 +1797,6 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
           break;
           
         case 'streamToken':
-          // Append token to streaming message
           const streamingMsg = document.getElementById('streamingMessage');
           if (streamingMsg) {
             streamingMsg.textContent += message.value;
@@ -1393,7 +1814,11 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
           
         case 'aiError':
           loadingSpinner?.classList.add('hidden');
-          addMessage(message.value, 'ai');
+          if (message.isOllamaOffline) {
+            addMessageWithHTML('⚠️ Ollama is offline. <button onclick="window.switchToCloudFallback()" style="padding: 2px 6px; font-size: 11px; margin-left: 6px; border:1px solid var(--vscode-button-border); border-radius:4px; color:var(--vscode-button-foreground); background:var(--vscode-button-background); cursor:pointer;">Switch to Cloud Fallback</button> or start Ollama server.', 'ai');
+          } else {
+            addMessage(message.value, 'ai');
+          }
           break;
           
         case 'aiResponse':
@@ -1413,6 +1838,28 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
 
         case 'configUpdated':
           fillForm(message.config);
+          break;
+
+        case 'ollamaModelsLoaded':
+          const nonLocalCatalog = modelCatalog.filter(i => i.section !== 'local');
+          const fetchedModels = message.models || [];
+          const newLocalItems = fetchedModels.map(modelName => ({
+            id: 'ollama:' + modelName,
+            name: modelName,
+            provider: 'Ollama',
+            badge: 'Local',
+            badgeColor: '#007acc',
+            section: 'local'
+          }));
+          modelCatalog.length = 0;
+          modelCatalog.push(...nonLocalCatalog, ...newLocalItems);
+          window.isOllamaAvailable = true;
+          renderModelList();
+          break;
+          
+        case 'ollamaModelsError':
+          window.isOllamaAvailable = false;
+          renderModelList();
           break;
 
         case 'providerStatus':

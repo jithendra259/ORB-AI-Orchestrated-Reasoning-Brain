@@ -80,51 +80,89 @@
       "properties": {
         "orb-ai.provider": {
           "type": "string",
-          "enum": ["ollama", "cloud", "nvidia"],
+          "enum": ["ollama", "cloud", "nvidia", "anthropic"],
           "default": "nvidia",
           "description": "Which LLM backend to use (nvidia recommended)"
         },
         "orb-ai.ollamaUrl": {
           "type": "string",
           "default": "http://localhost:11434",
-          "description": "Ollama server URL"
+          "description": "Ollama server URL",
+          "enablement": "config.orb-ai.provider == 'ollama'"
         },
         "orb-ai.ollamaModel": {
           "type": "string",
           "default": "qwen2.5-coder:7b",
-          "description": "Ollama model name"
+          "description": "Ollama model name",
+          "enablement": "config.orb-ai.provider == 'ollama'"
         },
         "orb-ai.cloudBaseUrl": {
           "type": "string",
           "default": "https://api.openai.com/v1",
-          "description": "OpenAI-compatible API base URL"
+          "description": "OpenAI-compatible API base URL",
+          "enablement": "config.orb-ai.provider == 'cloud'"
         },
         "orb-ai.cloudModel": {
           "type": "string",
           "default": "gpt-4o-mini",
-          "description": "Cloud model name"
+          "description": "Cloud model name",
+          "enablement": "config.orb-ai.provider == 'cloud'"
         },
         "orb-ai.apiKey": {
           "type": "string",
           "default": "",
           "markdownDescription": "API Key for cloud provider. ⚠️ Stored in VS Code settings.json — consider using SecretStorage for production.",
-          "scope": "machine-overridable"
+          "scope": "machine-overridable",
+          "enablement": "config.orb-ai.provider == 'cloud'"
         },
         "orb-ai.nvidiaApiKey": {
           "type": "string",
           "default": "",
           "markdownDescription": "NVIDIA API Key for Qwen model. Get it from https://integrate.api.nvidia.com. ⚠️ Stored in VS Code settings.json — consider using SecretStorage for production.",
-          "scope": "machine-overridable"
+          "scope": "machine-overridable",
+          "enablement": "config.orb-ai.provider == 'nvidia'"
         },
         "orb-ai.nvidiaBaseUrl": {
           "type": "string",
           "default": "https://integrate.api.nvidia.com/v1",
-          "description": "NVIDIA API base URL"
+          "description": "NVIDIA API base URL",
+          "enablement": "config.orb-ai.provider == 'nvidia'"
         },
         "orb-ai.nvidiaModel": {
           "type": "string",
           "default": "qwen/qwen3.5-397b-a17b",
-          "description": "NVIDIA Qwen model name"
+          "description": "NVIDIA Qwen model name",
+          "enablement": "config.orb-ai.provider == 'nvidia'"
+        },
+        "orb-ai.anthropicApiKey": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Anthropic API Key for Claude. ⚠️ Stored in VS Code settings.json — consider using SecretStorage for production.",
+          "scope": "machine-overridable",
+          "enablement": "config.orb-ai.provider == 'anthropic'"
+        },
+        "orb-ai.anthropicBaseUrl": {
+          "type": "string",
+          "default": "https://api.anthropic.com",
+          "description": "Anthropic API base URL",
+          "enablement": "config.orb-ai.provider == 'anthropic'"
+        },
+        "orb-ai.anthropicModel": {
+          "type": "string",
+          "default": "claude-3-5-sonnet-latest",
+          "description": "Anthropic Claude model name",
+          "enablement": "config.orb-ai.provider == 'anthropic'"
+        },
+        "orb-ai.toolsSafety": {
+          "type": "string",
+          "enum": ["safe", "readOnly", "dangerous"],
+          "enumDescriptions": [
+            "Ask before running tools (Safe)",
+            "Auto-run read-only tools",
+            "Auto-run all tools (Dangerous)"
+          ],
+          "default": "safe",
+          "description": "Tool Execution Safety mode"
         },
         "orb-ai.systemPrompt": {
           "type": "string",
