@@ -511,8 +511,8 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       padding: 0;
       font-family: 'Inter', var(--vscode-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
       font-size: 13px;
-      color: #e2e8f0;
-      background: #0d0e12;
+      color: var(--vscode-foreground, #cbd5e1);
+      background: var(--vscode-sideBar-background, #1e1e1e);
       height: 100vh;
       display: flex;
       flex-direction: column;
@@ -525,8 +525,8 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       align-items: center;
       padding: 10px 14px 8px;
       gap: 6px;
-      border-bottom: 1px solid #1f242d;
-      background: #0f111a;
+      border-bottom: 1px solid var(--vscode-panel-border, rgba(255,255,255,0.08));
+      background: var(--vscode-sideBar-background, #1e1e1e);
       flex-shrink: 0;
     }
     .orb-logo {
@@ -540,23 +540,24 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       width: 22px;
       height: 22px;
       border-radius: 6px;
-      background: linear-gradient(135deg, #10b981, #059669);
+      background: var(--vscode-button-background, #0e639c);
+      color: var(--vscode-button-foreground, #ffffff);
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 11px;
       flex-shrink: 0;
-      box-shadow: 0 2px 10px rgba(16,185,129,0.3);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
     .orb-logo-text {
       font-size: 13px;
       font-weight: 700;
-      color: #ffffff;
+      color: var(--vscode-titleBar-activeForeground, #ffffff);
       letter-spacing: 0.4px;
     }
     .orb-logo-sub {
       font-size: 9px;
-      color: #4b5563;
+      color: var(--vscode-descriptionForeground, #858585);
       margin-left: 2px;
     }
     .toolbar-actions {
@@ -567,7 +568,7 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     .tb-btn {
       background: transparent;
       border: none;
-      color: #94a3b8;
+      color: var(--vscode-descriptionForeground, #858585);
       cursor: pointer;
       padding: 4px 6px;
       border-radius: 5px;
@@ -577,8 +578,8 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       transition: background 0.15s, color 0.15s;
     }
     .tb-btn:hover {
-      background: rgba(255,255,255,0.06);
-      color: #ffffff;
+      background: var(--vscode-toolbar-hoverBackground, rgba(255,255,255,0.06));
+      color: var(--vscode-foreground, #ffffff);
     }
     .provider-dot {
       width: 8px;
@@ -593,7 +594,7 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     .provider-dot.error { background: #ef4444; }
     .provider-label {
       font-size: 10px;
-      color: #94a3b8;
+      color: var(--vscode-descriptionForeground, #858585);
       font-weight: 600;
     }
 
@@ -603,7 +604,7 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
       z-index: 200;
-      background: #0d0e12;
+      background: var(--vscode-sideBar-background, #1e1e1e);
       flex-direction: column;
     }
     .settings-overlay.open {
@@ -614,8 +615,8 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       align-items: center;
       gap: 8px;
       padding: 12px 14px;
-      border-bottom: 1px solid #1f242d;
-      background: #0f111a;
+      border-bottom: 1px solid var(--vscode-panel-border, rgba(255,255,255,0.08));
+      background: var(--vscode-sideBar-background, #1e1e1e);
       flex-shrink: 0;
     }
     .settings-header h2 {
@@ -623,7 +624,7 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       font-size: 13px;
       font-weight: 700;
       flex: 1;
-      color: #ffffff;
+      color: var(--vscode-foreground, #ffffff);
     }
     .settings-body {
       flex: 1;
@@ -632,13 +633,14 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       display: flex;
       flex-direction: column;
       gap: 12px;
+      background: var(--vscode-sideBar-background, #1e1e1e);
     }
     .settings-section-title {
       font-size: 10px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.8px;
-      color: #10b981;
+      color: var(--vscode-textLink-foreground, #0e639c);
       margin-bottom: 4px;
       margin-top: 4px;
     }
@@ -649,15 +651,15 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     }
     .form-row label {
       font-size: 11px;
-      color: #94a3b8;
+      color: var(--vscode-descriptionForeground, #858585);
       font-weight: 500;
     }
     .form-row input,
     .form-row select,
     .form-row textarea {
-      background: #16181f;
-      color: #ffffff;
-      border: 1px solid #2d3139;
+      background: var(--vscode-input-background, #2d2d2d);
+      color: var(--vscode-input-foreground, #ffffff);
+      border: 1px solid var(--vscode-input-border, rgba(255,255,255,0.1));
       border-radius: 6px;
       padding: 6px 10px;
       font-family: inherit;
@@ -668,7 +670,7 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     .form-row input:focus,
     .form-row select:focus,
     .form-row textarea:focus {
-      border-color: #10b981;
+      border-color: var(--vscode-focusBorder, #0e639c);
     }
     .pw-wrap {
       position: relative;
@@ -685,22 +687,22 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       transform: translateY(-50%);
       cursor: pointer;
       font-size: 12px;
-      color: #94a3b8;
+      color: var(--vscode-descriptionForeground, #858585);
       user-select: none;
     }
     .provider-section { display: none; }
     .provider-section.active { display: flex; flex-direction: column; gap: 12px; }
     .settings-footer {
       padding: 12px 14px;
-      border-top: 1px solid #1f242d;
-      background: #0f111a;
+      border-top: 1px solid var(--vscode-panel-border, rgba(255,255,255,0.08));
+      background: var(--vscode-sideBar-background, #1e1e1e);
       flex-shrink: 0;
     }
     .save-btn {
       width: 100%;
       padding: 8px;
-      background: linear-gradient(135deg, #10b981, #059669);
-      color: #ffffff;
+      background: var(--vscode-button-background, #0e639c);
+      color: var(--vscode-button-foreground, #ffffff);
       border: none;
       border-radius: 6px;
       font-size: 12px;
@@ -709,7 +711,7 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       transition: opacity 0.15s, transform 0.1s;
       font-family: inherit;
     }
-    .save-btn:hover { opacity: 0.9; }
+    .save-btn:hover { background: var(--vscode-button-hoverBackground, #1177bb); }
     .save-btn:active { transform: scale(0.98); }
 
     /* ─── Quick Action Bar ─── */
@@ -718,15 +720,15 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       gap: 6px;
       padding: 8px 12px;
       flex-shrink: 0;
-      border-bottom: 1px solid #171a21;
-      background: #0d0e12;
+      border-bottom: 1px solid var(--vscode-panel-border, rgba(255,255,255,0.08));
+      background: var(--vscode-sideBar-background, #1e1e1e);
     }
     .quick-btn {
       flex: 1;
       padding: 6px;
-      background: #16181f;
-      color: #cbd5e1;
-      border: 1px solid #232730;
+      background: var(--vscode-button-secondaryBackground, #2d2d2d);
+      color: var(--vscode-button-secondaryForeground, #ffffff);
+      border: 1px solid var(--vscode-panel-border, rgba(255,255,255,0.08));
       border-radius: 6px;
       font-size: 11px;
       font-weight: 500;
@@ -742,9 +744,9 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       gap: 4px;
     }
     .quick-btn:hover {
-      background: #1c1f2a;
-      color: #ffffff;
-      border-color: #10b981;
+      background: var(--vscode-button-secondaryHoverBackground, rgba(255,255,255,0.1));
+      color: var(--vscode-foreground, #ffffff);
+      border-color: var(--vscode-focusBorder, #0e639c);
     }
 
     /* ─── Chat Area ─── */
@@ -756,6 +758,7 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       flex-direction: column;
       gap: 10px;
       scroll-behavior: smooth;
+      background: var(--vscode-editor-background, #1e1e1e);
     }
     .chat-area::-webkit-scrollbar { width: 4px; }
     .chat-area::-webkit-scrollbar-track { background: transparent; }
@@ -763,8 +766,8 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
 
     /* Welcome card */
     .welcome-card {
-      background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(5,150,105,0.03));
-      border: 1px solid rgba(16,185,129,0.15);
+      background: var(--vscode-sideBar-background, #252526);
+      border: 1px solid var(--vscode-panel-border, rgba(255,255,255,0.08));
       border-radius: 8px;
       padding: 14px;
       margin-top: 2px;
@@ -772,7 +775,7 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     .welcome-title {
       font-size: 13px;
       font-weight: 700;
-      color: #ffffff;
+      color: var(--vscode-foreground, #ffffff);
       margin-bottom: 6px;
       display: flex;
       align-items: center;
@@ -780,7 +783,7 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     }
     .welcome-sub {
       font-size: 11px;
-      color: #94a3b8;
+      color: var(--vscode-descriptionForeground, #858585);
       line-height: 1.5;
     }
     .welcome-hints {
@@ -794,19 +797,19 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       align-items: center;
       gap: 6px;
       padding: 6px 10px;
-      background: #16181f;
-      border: 1px solid #232730;
+      background: var(--vscode-editor-background, #1e1e1e);
+      border: 1px solid var(--vscode-panel-border, rgba(255,255,255,0.08));
       border-radius: 6px;
       font-size: 11px;
-      color: #cbd5e1;
+      color: var(--vscode-foreground, #cbd5e1);
       cursor: pointer;
       transition: all 0.15s;
       text-align: left;
     }
     .hint-chip:hover {
-      background: rgba(16,185,129,0.1);
-      border-color: rgba(16,185,129,0.3);
-      color: #ffffff;
+      background: var(--vscode-list-hoverBackground, rgba(255,255,255,0.06));
+      border-color: var(--vscode-focusBorder, #0e639c);
+      color: var(--vscode-foreground, #ffffff);
     }
 
     /* Messages */
@@ -815,8 +818,8 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       justify-content: flex-end;
     }
     .msg-user .bubble {
-      background: linear-gradient(135deg, #10b981, #059669);
-      color: #ffffff;
+      background: var(--vscode-button-background, #0e639c);
+      color: var(--vscode-button-foreground, #ffffff);
       border-radius: 12px 12px 3px 12px;
       padding: 8px 12px;
       max-width: 88%;
@@ -824,7 +827,7 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       line-height: 1.5;
       word-break: break-word;
       white-space: pre-wrap;
-      box-shadow: 0 3px 12px rgba(16,185,129,0.2);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
     }
     .msg-ai {
       display: flex;
@@ -835,8 +838,8 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       width: 22px;
       height: 22px;
       border-radius: 6px;
-      background: #16181f;
-      border: 1px solid rgba(16,185,129,0.2);
+      background: var(--vscode-sideBar-background, #252526);
+      border: 1px solid var(--vscode-panel-border, rgba(255,255,255,0.08));
       display: flex;
       align-items: center;
       justify-content: center;
@@ -845,19 +848,19 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       margin-top: 2px;
     }
     .msg-ai .bubble {
-      background: #111319;
-      border: 1px solid #1e2330;
+      background: var(--vscode-sideBar-background, #252526);
+      border: 1px solid var(--vscode-panel-border, rgba(255,255,255,0.08));
       border-radius: 3px 12px 12px 12px;
       padding: 8px 12px;
       max-width: calc(100% - 30px);
       font-size: 13px;
       line-height: 1.6;
-      color: #cbd5e1;
+      color: var(--vscode-foreground, #cbd5e1);
       word-break: break-word;
       white-space: pre-wrap;
     }
     .msg-error .bubble {
-      background: rgba(239,68,68,0.06);
+      background: var(--vscode-statusBarItem-errorBackground, rgba(239,68,68,0.08));
       border-color: rgba(239,68,68,0.25);
       color: #f87171;
     }
@@ -866,7 +869,7 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       width: 5px;
       height: 5px;
       border-radius: 50%;
-      background: #94a3b8;
+      background: var(--vscode-descriptionForeground, #858585);
       animation: typingBlink 1s ease-in-out infinite;
       margin: 0 1px;
     }
@@ -883,10 +886,10 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       align-items: center;
       gap: 8px;
       padding: 8px 12px;
-      background: #101217;
-      border: 1px solid #1d212b;
+      background: var(--vscode-sideBar-background, #252526);
+      border: 1px solid var(--vscode-panel-border, rgba(255,255,255,0.08));
       border-radius: 6px;
-      color: #cbd5e1;
+      color: var(--vscode-foreground, #cbd5e1);
       font-size: 12px;
       margin: 4px 0;
     }
@@ -894,7 +897,7 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       width: 14px;
       height: 14px;
       border: 2px solid rgba(16,185,129,0.2);
-      border-top-color: #10b981;
+      border-top-color: var(--vscode-textLink-foreground, #0e639c);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
@@ -904,8 +907,8 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
 
     /* Tool execution cards */
     .tool-card {
-      background: #111319;
-      border: 1px solid #1e222c;
+      background: var(--vscode-sideBar-background, #252526);
+      border: 1px solid var(--vscode-panel-border, rgba(255,255,255,0.08));
       border-radius: 6px;
       padding: 10px;
       margin: 6px 0;
@@ -919,7 +922,7 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       justify-content: space-between;
       font-size: 11px;
       font-weight: 600;
-      color: #10b981;
+      color: var(--vscode-textLink-foreground, #0e639c);
     }
     .tool-title {
       display: flex;
@@ -939,12 +942,13 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
     .tool-badge.error { background: #7f1d1d; color: #ffffff; }
     
     .tool-details {
-      background: #0b0c10;
+      background: var(--vscode-editor-background, #1e1e1e);
       border-radius: 4px;
       padding: 6px 8px;
       font-family: var(--vscode-editor-font-family, monospace);
       font-size: 11px;
-      color: #94a3b8;
+      color: var(--vscode-editor-foreground, #cbd5e1);
+      border: 1px solid var(--vscode-panel-border, rgba(255,255,255,0.08));
       white-space: pre-wrap;
       word-break: break-all;
       max-height: 150px;
@@ -967,17 +971,17 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       align-items: center;
       justify-content: center;
       gap: 4px;
-      color: #fff;
+      color: var(--vscode-button-foreground, #ffffff);
     }
-    .tool-btn.approve { background: #10b981; }
-    .tool-btn.approve:hover { background: #059669; }
-    .tool-btn.reject { background: #ef4444; }
-    .tool-btn.reject:hover { background: #dc2626; }
+    .tool-btn.approve { background: var(--vscode-button-background, #0e639c); }
+    .tool-btn.approve:hover { background: var(--vscode-button-hoverBackground, #1177bb); }
+    .tool-btn.reject { background: var(--vscode-statusBarItem-errorBackground, #a80000); }
+    .tool-btn.reject:hover { opacity: 0.9; }
 
     /* Diff View styles */
     .diff-container {
-      background: #090a0e;
-      border: 1px solid #1a1c24;
+      background: var(--vscode-editor-background, #1e1e1e);
+      border: 1px solid var(--vscode-panel-border, rgba(255,255,255,0.08));
       border-radius: 4px;
       font-family: var(--vscode-editor-font-family, monospace);
       font-size: 11px;
@@ -990,8 +994,8 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       display: block;
       padding: 1px 6px;
     }
-    .diff-line.added { background: rgba(16,185,129,0.12); color: #34d399; }
-    .diff-line.removed { background: rgba(239,68,68,0.12); color: #f87171; }
+    .diff-line.added { background: var(--vscode-diffEditor-insertedTextBackground, rgba(16,185,129,0.12)); color: #34d399; }
+    .diff-line.removed { background: var(--vscode-diffEditor-removedTextBackground, rgba(239,68,68,0.12)); color: #f87171; }
     .diff-line.info { color: #85a5ff; font-weight: 600; }
 
     /* ─── Model Selector Bar ─── */
@@ -1000,8 +1004,8 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       align-items: center;
       gap: 4px;
       padding: 6px 12px;
-      border-top: 1px solid #171a21;
-      background: #0f111a;
+      border-top: 1px solid var(--vscode-panel-border, rgba(255,255,255,0.08));
+      background: var(--vscode-sideBar-background, #1e1e1e);
       flex-shrink: 0;
       position: relative;
     }
@@ -1010,25 +1014,25 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       align-items: center;
       gap: 4px;
       padding: 4px 8px;
-      background: #16181f;
-      border: 1px solid #232730;
+      background: var(--vscode-editor-background, #1e1e1e);
+      border: 1px solid var(--vscode-panel-border, rgba(255,255,255,0.08));
       border-radius: 20px;
       font-size: 11px;
-      color: #cbd5e1;
+      color: var(--vscode-foreground, #cbd5e1);
       cursor: pointer;
       transition: all 0.15s;
       user-select: none;
       white-space: nowrap;
     }
     .model-chip:hover {
-      background: #1f222d;
-      border-color: #10b981;
-      color: #ffffff;
+      background: var(--vscode-list-hoverBackground, rgba(255,255,255,0.06));
+      border-color: var(--vscode-focusBorder, #0e639c);
+      color: var(--vscode-foreground, #ffffff);
     }
     .model-chip.active {
-      border-color: #10b981;
-      color: #ffffff;
-      background: rgba(16,185,129,0.06);
+      border-color: var(--vscode-focusBorder, #0e639c);
+      color: var(--vscode-foreground, #ffffff);
+      background: rgba(14,99,156,0.08);
     }
     .model-chip-icon { font-size: 10px; }
     .model-chip-caret { font-size: 7px; opacity: 0.6; }
@@ -1039,10 +1043,10 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       bottom: calc(100% + 6px);
       left: 10px;
       right: 10px;
-      background: #0f111a;
-      border: 1px solid #232730;
+      background: var(--vscode-menu-background, #252526);
+      border: 1px solid var(--vscode-menu-border, rgba(255,255,255,0.12));
       border-radius: 8px;
-      box-shadow: 0 -8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(16,185,129,0.1);
+      box-shadow: 0 -4px 12px rgba(0,0,0,0.5);
       z-index: 100;
       display: flex;
       flex-direction: column;
@@ -1055,18 +1059,18 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       align-items: center;
       gap: 6px;
       padding: 8px 10px;
-      border-bottom: 1px solid #1c212d;
+      border-bottom: 1px solid var(--vscode-panel-border, rgba(255,255,255,0.08));
     }
     .popover-search input {
       flex: 1;
       background: transparent;
       border: none;
-      color: #ffffff;
+      color: var(--vscode-menu-foreground, #ffffff);
       font-size: 12px;
       font-family: inherit;
       outline: none;
     }
-    .popover-search input::placeholder { color: #64748b; }
+    .popover-search input::placeholder { color: var(--vscode-descriptionForeground, #858585); }
     .popover-list {
       overflow-y: auto;
       flex: 1;
@@ -1079,7 +1083,7 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.8px;
-      color: #10b981;
+      color: var(--vscode-textLink-foreground, #0e639c);
       padding: 6px 12px 2px;
     }
     .pop-item {
@@ -1090,11 +1094,12 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       cursor: pointer;
       transition: background 0.1s;
     }
-    .pop-item:hover { background: rgba(16,185,129,0.06); }
-    .pop-item.selected { background: rgba(16,185,129,0.1); }
-    .pop-check { width: 14px; font-size: 11px; color: #10b981; text-align: center; flex-shrink: 0; }
-    .pop-name { flex: 1; font-size: 12px; color: #ffffff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .pop-provider { font-size: 10px; color: #64748b; }
+    .pop-item:hover { background: var(--vscode-menu-hoverBackground, rgba(255,255,255,0.06)); }
+    .pop-item.selected { background: var(--vscode-list-activeSelectionBackground, #094771); }
+    .pop-item.selected .pop-name { color: var(--vscode-list-activeSelectionForeground, #ffffff); }
+    .pop-check { width: 14px; font-size: 11px; color: var(--vscode-textLink-foreground, #0e639c); text-align: center; flex-shrink: 0; }
+    .pop-name { flex: 1; font-size: 12px; color: var(--vscode-menu-foreground, #ffffff); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pop-provider { font-size: 10px; color: var(--vscode-descriptionForeground, #858585); }
     .pop-badge {
       font-size: 9px;
       font-weight: 700;
@@ -1108,26 +1113,27 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       padding: 0 10px 10px;
       flex-shrink: 0;
       position: relative;
+      background: var(--vscode-sideBar-background, #1e1e1e);
     }
     .input-box {
       display: flex;
       align-items: flex-end;
       gap: 6px;
-      background: #16181f;
-      border: 1px solid #232730;
+      background: var(--vscode-input-background, #2d2d2d);
+      border: 1px solid var(--vscode-input-border, rgba(255,255,255,0.1));
       border-radius: 10px;
       padding: 8px 8px 8px 12px;
       transition: border-color 0.2s, box-shadow 0.2s;
     }
     .input-box:focus-within {
-      border-color: rgba(16,185,129,0.4);
-      box-shadow: 0 0 0 2px rgba(16,185,129,0.1);
+      border-color: var(--vscode-focusBorder, #0e639c);
+      box-shadow: 0 0 0 1px var(--vscode-focusBorder, #0e639c);
     }
     .input-box textarea {
       flex: 1;
       background: transparent;
       border: none;
-      color: #ffffff;
+      color: var(--vscode-input-foreground, #ffffff);
       font-family: inherit;
       font-size: 13px;
       line-height: 1.5;
@@ -1138,13 +1144,13 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       padding: 0;
       margin: 0;
     }
-    .input-box textarea::placeholder { color: #64748b; }
+    .input-box textarea::placeholder { color: var(--vscode-input-placeholderForeground, #858585); }
     .send-btn {
       width: 28px;
       height: 28px;
       border-radius: 7px;
-      background: linear-gradient(135deg, #10b981, #059669);
-      color: #fff;
+      background: var(--vscode-button-background, #0e639c);
+      color: var(--vscode-button-foreground, #ffffff);
       border: none;
       display: flex;
       align-items: center;
@@ -1153,9 +1159,9 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       transition: opacity 0.15s, transform 0.1s;
       padding: 0;
       flex-shrink: 0;
-      box-shadow: 0 2px 8px rgba(16,185,129,0.3);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
-    .send-btn:hover { opacity: 0.9; transform: scale(1.05); }
+    .send-btn:hover { background: var(--vscode-button-hoverBackground, #1177bb); transform: scale(1.02); }
     .send-btn:active { transform: scale(0.95); }
     .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
@@ -1165,10 +1171,10 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       bottom: calc(100% + 4px);
       left: 10px;
       right: 10px;
-      background: #0f111a;
-      border: 1px solid #232730;
+      background: var(--vscode-menu-background, #252526);
+      border: 1px solid var(--vscode-menu-border, rgba(255,255,255,0.12));
       border-radius: 8px;
-      box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+      box-shadow: 0 -4px 12px rgba(0,0,0,0.5);
       z-index: 110;
       max-height: 180px;
       overflow-y: auto;
@@ -1180,15 +1186,15 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       padding: 7px 12px;
       cursor: pointer;
       font-size: 12px;
-      color: #cbd5e1;
-      border-bottom: 1px solid #181c25;
+      color: var(--vscode-menu-foreground, #ffffff);
+      border-bottom: 1px solid var(--vscode-panel-border, rgba(255,255,255,0.08));
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
     .autocomplete-item:hover {
-      background: rgba(16,185,129,0.08);
-      color: #ffffff;
+      background: var(--vscode-menu-hoverBackground, rgba(255,255,255,0.06));
+      color: var(--vscode-foreground, #ffffff);
     }
 
     /* ─── Summary stats ─── */
@@ -1199,28 +1205,28 @@ export class OrbAiViewProvider implements vscode.WebviewViewProvider {
       margin: 2px 0;
     }
     .stat-card {
-      background: #111319;
-      border: 1px solid #1e222c;
+      background: var(--vscode-sideBar-background, #252526);
+      border: 1px solid var(--vscode-panel-border, rgba(255,255,255,0.08));
       border-radius: 6px;
       padding: 8px 10px;
     }
-    .stat-val { font-size: 16px; font-weight: 700; color: #ffffff; }
-    .stat-lbl { font-size: 10px; color: #64748b; margin-top: 2px; }
+    .stat-val { font-size: 16px; font-weight: 700; color: var(--vscode-foreground, #ffffff); }
+    .stat-lbl { font-size: 10px; color: var(--vscode-descriptionForeground, #858585); margin-top: 2px; }
     .data-list { display: flex; flex-direction: column; gap: 5px; }
     .data-item {
-      background: #111319;
-      border: 1px solid #1e222c;
+      background: var(--vscode-sideBar-background, #252526);
+      border: 1px solid var(--vscode-panel-border, rgba(255,255,255,0.08));
       border-radius: 6px;
       padding: 7px 10px;
     }
     .data-item-title { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; }
-    .data-item-meta { font-size: 11px; color: #64748b; margin-top: 2px; overflow-wrap: anywhere; }
+    .data-item-meta { font-size: 11px; color: var(--vscode-descriptionForeground, #858585); margin-top: 2px; overflow-wrap: anywhere; }
     .section-label {
       font-size: 10px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.7px;
-      color: #10b981;
+      color: var(--vscode-textLink-foreground, #0e639c);
       margin: 8px 0 4px;
     }
     .hidden { display: none !important; }
