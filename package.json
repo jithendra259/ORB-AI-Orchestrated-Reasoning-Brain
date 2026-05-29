@@ -80,7 +80,12 @@
       "properties": {
         "orb-ai.provider": {
           "type": "string",
-          "enum": ["ollama", "cloud", "nvidia", "anthropic"],
+          "enum": [
+            "ollama",
+            "cloud",
+            "nvidia",
+            "anthropic"
+          ],
           "default": "nvidia",
           "description": "Which LLM backend to use (nvidia recommended)"
         },
@@ -155,7 +160,11 @@
         },
         "orb-ai.toolsSafety": {
           "type": "string",
-          "enum": ["safe", "readOnly", "dangerous"],
+          "enum": [
+            "safe",
+            "readOnly",
+            "dangerous"
+          ],
           "enumDescriptions": [
             "Ask before running tools (Safe)",
             "Auto-run read-only tools",
@@ -186,14 +195,18 @@
     "package": "webpack --mode production",
     "test-compile": "tsc -p ./",
     "lint": "eslint src --ext ts",
-    "test": "npm run test-compile && npm run lint"
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "20.x",
     "@types/vscode": "^1.95.0",
     "@typescript-eslint/eslint-plugin": "^7.12.0",
     "@typescript-eslint/parser": "^7.12.0",
     "eslint": "^8.57.0",
+    "jest": "^30.4.2",
+    "ts-jest": "^29.4.11",
     "ts-loader": "^9.5.1",
     "typescript": "^5.4.5",
     "webpack": "^5.91.0",
